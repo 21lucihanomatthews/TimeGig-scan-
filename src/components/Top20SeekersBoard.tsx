@@ -7,7 +7,7 @@ import {
   MessageSquare, 
   Sparkles, 
   ShieldCheck, 
-  CheckCircle2, 
+  BadgeCheck, 
   ChevronRight,
   Star,
   MapPin,
@@ -23,6 +23,7 @@ interface Top20SeekersBoardProps {
   onStartChat: (name: string, text: string, avatar: string) => void;
   deductCoins: (amount: number) => boolean;
   coinBalance: number;
+  allSeekers: Seeker[];
 }
 
 const provincesList = [
@@ -42,7 +43,8 @@ export default function Top20SeekersBoard({
   onClose, 
   onStartChat, 
   deductCoins,
-  coinBalance
+  coinBalance,
+  allSeekers
 }: Top20SeekersBoardProps) {
   const [selectedProvince, setSelectedProvince] = useState<string>('Gauteng');
   const [searchTerm, setSearchTerm] = useState<string>('');
@@ -54,8 +56,11 @@ export default function Top20SeekersBoard({
 
   if (!isOpen) return null;
 
-  // Retrieve province top 20 seekers dynamically
-  const seekers = generateProvinceTopSeekers(selectedProvince);
+  // Retrieve top 20 candidates with > 10 likes and by province
+  const seekers = allSeekers
+    .filter(s => (s.likes || 0) > 10 && s.province === selectedProvince)
+    .sort((a, b) => (b.likes || 0) - (a.likes || 0))
+    .slice(0, 20);
 
   // Filter list based on search input
   const filteredSeekers = seekers.filter(seeker => 
@@ -101,22 +106,22 @@ Hi ${hiringSeeker.name}! I have reviewed your expert profile on the Top 20 Candi
   };
 
   return (
-    <div className="fixed inset-0 z-[120] bg-slate-950/70 backdrop-blur-xl flex flex-col justify-between max-w-md mx-auto overflow-hidden text-white transition-opacity duration-300">
+    <div className="fixed inset-0 z-[120] bg-white flex flex-col justify-between max-w-md mx-auto overflow-hidden text-gray-900 transition-opacity duration-300">
       {/* Header Sticky Box */}
-      <div className="p-4 border-b border-white/10 flex items-center justify-between bg-slate-900/40 backdrop-blur-md sticky top-0 shrink-0 z-10 select-none">
+      <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-white sticky top-0 shrink-0 z-10 select-none">
         <div className="flex items-center gap-2">
-          <Crown size={22} className="text-yellow-400 animate-bounce" />
+          <Crown size={22} className="text-amber-500" />
           <div className="text-left">
-            <h2 className="text-sm font-black uppercase tracking-widest text-[#F9FAFB] flex items-center gap-1">
-              Top 20 Seekers Board
+            <h2 className="text-sm font-black uppercase tracking-widest text-gray-900 flex items-center gap-1">
+              Top 20 Candidates
             </h2>
-            <p className="text-[9px] text-[#D1D5DB] font-semibold leading-none mt-0.5">Explore curated experts per South African province</p>
+            <p className="text-[9px] text-gray-500 font-semibold leading-none mt-0.5">Highly rated and liked by clients per province</p>
           </div>
         </div>
         <button
           type="button"
           onClick={onClose}
-          className="bg-white/10 hover:bg-white/20 active:scale-95 text-white rounded-full p-2 border border-white/10 transition-all"
+          className="bg-gray-100 hover:bg-gray-200 active:scale-95 text-gray-500 rounded-full p-2 border border-gray-200 transition-all"
           title="Close board"
         >
           <X size={16} />
@@ -128,7 +133,7 @@ Hi ${hiringSeeker.name}! I have reviewed your expert profile on the Top 20 Candi
         
         {/* Province Scroll Selection Tabs */}
         <div className="space-y-1.5 text-left">
-          <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Select South African Province</label>
+          <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Select South African Province</label>
           <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-none">
             {provincesList.map(prov => (
               <button
@@ -139,8 +144,8 @@ Hi ${hiringSeeker.name}! I have reviewed your expert profile on the Top 20 Candi
                 }}
                 className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all whitespace-nowrap border ${
                   selectedProvince === prov 
-                    ? 'bg-yellow-400 text-yellow-950 border-yellow-300 shadow-md' 
-                    : 'bg-white/5 text-gray-300 border-white/10 hover:bg-white/10'
+                    ? 'bg-gray-900 text-white border-gray-900 shadow-sm' 
+                    : 'bg-gray-100 text-gray-500 border-gray-200 hover:bg-gray-200'
                 }`}
               >
                 {prov}
@@ -156,13 +161,13 @@ Hi ${hiringSeeker.name}! I have reviewed your expert profile on the Top 20 Candi
             placeholder={`Filter 20 top-tier ${selectedProvince} experts...`}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full bg-white/5 border border-white/10 rounded-full pl-9 pr-4 py-2.5 outline-none focus:ring-2 focus:ring-yellow-400 text-xs text-[#FFFFFF] placeholder:text-gray-400 font-medium font-sans text-left"
+            className="w-full bg-gray-50 border border-gray-200 rounded-full pl-9 pr-4 py-2.5 outline-none focus:ring-2 focus:ring-blue-500 text-xs text-gray-900 placeholder:text-gray-400 font-medium font-sans text-left"
           />
           <Search className="absolute left-3 top-3 text-gray-400" size={14} />
           {searchTerm && (
             <button
               onClick={() => setSearchTerm('')}
-              className="absolute right-3.5 top-3 text-gray-400 hover:text-white"
+              className="absolute right-3.5 top-3 text-gray-400 hover:text-gray-900"
             >
               <X size={14} />
             </button>
@@ -170,12 +175,12 @@ Hi ${hiringSeeker.name}! I have reviewed your expert profile on the Top 20 Candi
         </div>
 
         {/* Dynamic Coin Wallet display info bar */}
-        <div className="bg-gradient-to-r from-blue-950/40 via-indigo-950/20 to-transparent p-3 rounded-2xl border border-white/10 flex items-center justify-between text-left">
+        <div className="bg-blue-50 p-3 rounded-2xl border border-blue-100 flex items-center justify-between text-left">
           <div className="space-y-0.5">
-            <span className="text-[9px] uppercase tracking-wider font-bold text-blue-400">TimeGiG Priority Escrow Escort</span>
-            <p className="text-[10px] text-gray-300 leading-tight">Instant hire guarantees calendar reservations and priority support lock.</p>
+            <span className="text-[9px] uppercase tracking-wider font-bold text-blue-600">TimeGiG Priority Escrow Escort</span>
+            <p className="text-[10px] text-gray-600 leading-tight">Instant hire guarantees calendar reservations and priority support lock.</p>
           </div>
-          <div className="bg-white/10 px-2.5 py-1 rounded-xl text-yellow-400 font-mono text-xs font-bold border border-white/5">
+          <div className="bg-white px-2.5 py-1 rounded-xl text-amber-600 font-mono text-xs font-bold border border-amber-200 shadow-sm">
             🪙 {coinBalance}
           </div>
         </div>
@@ -183,9 +188,9 @@ Hi ${hiringSeeker.name}! I have reviewed your expert profile on the Top 20 Candi
         {/* Candidates Feed */}
         <div className="space-y-3">
           {filteredSeekers.length === 0 ? (
-            <div className="text-center py-12 text-gray-400 bg-white/5 rounded-2xl border border-dashed border-white/10 p-6">
-              <p className="font-semibold">No expert matches found</p>
-              <p className="text-xs text-gray-450 mt-1">Try another search filter query!</p>
+            <div className="text-center py-12 text-gray-900 bg-gray-50 rounded-2xl border border-dashed border-gray-200 p-6">
+              <p className="font-extrabold text-lg">No expert matches found</p>
+              <p className="text-xs text-gray-500 mt-2">Try another search filter query!</p>
             </div>
           ) : (
             filteredSeekers.map((seeker, index) => {
@@ -193,7 +198,7 @@ Hi ${hiringSeeker.name}! I have reviewed your expert profile on the Top 20 Candi
               return (
                 <div
                   key={seeker.id}
-                  className="p-3.5 rounded-2xl bg-white/[0.06] border border-white/10 transition-colors hover:bg-white/[0.09] space-y-3"
+                  className="p-3.5 rounded-2xl bg-white border border-gray-100 shadow-sm transition-colors hover:bg-gray-50 space-y-3"
                 >
                   {/* Seeker Profile Info Header */}
                   <div className="flex items-start justify-between gap-3 text-left">
@@ -202,14 +207,14 @@ Hi ${hiringSeeker.name}! I have reviewed your expert profile on the Top 20 Candi
                       <div className="relative shrink-0">
                         <img
                           src={seeker.avatar}
-                          className="w-12 h-12 rounded-full border border-white/20 object-cover bg-slate-800"
+                          className="w-12 h-12 rounded-full border border-gray-100 object-cover bg-gray-50"
                           alt={seeker.name}
                         />
                         <div className={`absolute -top-1.5 -left-1.5 w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black shadow-md border ${
-                          actualRank === 1 ? 'bg-yellow-400 text-yellow-950 border-yellow-300' :
+                          actualRank === 1 ? 'bg-amber-400 text-amber-950 border-amber-300' :
                           actualRank === 2 ? 'bg-slate-300 text-slate-900 border-slate-200' :
-                          actualRank === 3 ? 'bg-amber-600 text-amber-50 border-amber-500' :
-                          'bg-slate-800/90 text-white border-white/10 backdrop-blur-md'
+                          actualRank === 3 ? 'bg-orange-800 text-orange-50 border-orange-700' :
+                          'bg-gray-100 text-gray-500 border-gray-200 shadow-sm'
                         }`}>
                           {actualRank}
                         </div>
@@ -217,12 +222,12 @@ Hi ${hiringSeeker.name}! I have reviewed your expert profile on the Top 20 Candi
                       
                       <div className="text-left font-sans">
                         <div className="flex items-center gap-1">
-                          <span className="font-extrabold text-sm tracking-tight text-[#FFFFFF]">{seeker.name}</span>
-                          <CheckCircle2 size={13} className="text-blue-400 fill-blue-950 shrink-0" />
+                          <span className="font-extrabold text-sm tracking-tight text-gray-900">{seeker.name}</span>
+                          <BadgeCheck size={13} fill="#3b82f6" className="text-white shrink-0" />
                         </div>
-                        <p className="text-[10px] text-gray-400 leading-normal line-clamp-1">{seeker.title}</p>
+                        <p className="text-[10px] text-gray-500 leading-normal line-clamp-1">{seeker.title}</p>
                         <div className="flex items-center gap-2 mt-1">
-                          <span className="text-[9px] bg-white/10 px-1.5 py-0.5 rounded font-black text-gray-300 tracking-tight uppercase">
+                          <span className="text-[9px] bg-blue-50 px-1.5 py-0.5 rounded font-black text-blue-600 tracking-tight uppercase border border-blue-100">
                             {seeker.category}
                           </span>
                           <span className="text-[9px] font-bold text-gray-400 flex items-center gap-0.5">
@@ -233,25 +238,25 @@ Hi ${hiringSeeker.name}! I have reviewed your expert profile on the Top 20 Candi
                     </div>
 
                     <div className="text-right shrink-0">
-                      <span className="text-xs font-black text-yellow-400 font-mono tracking-tight">{seeker.budget}</span>
+                      <span className="text-xs font-black text-amber-600 font-mono tracking-tight">{seeker.budget}</span>
                       <p className="text-[8px] text-gray-400 font-bold uppercase tracking-wide mt-1">Provider Rate</p>
                     </div>
                   </div>
 
                   {/* Candidate Bio statement */}
-                  <div className="p-3 rounded-xl bg-white/[0.03] text-[11px] text-gray-300 leading-relaxed text-left border border-white/[0.04]">
+                  <div className="p-3 rounded-xl bg-gray-50 text-[11px] text-gray-600 leading-relaxed text-left border border-gray-100">
                     {seeker.description}
                     
                     {/* Location Badge */}
-                    <div className="flex items-center gap-1.5 text-gray-400 mt-2 font-semibold">
-                      <MapPin size={10} className="text-yellow-400 shrink-0" />
+                    <div className="flex items-center gap-1.5 text-gray-500 mt-2 font-semibold">
+                      <MapPin size={10} className="text-amber-500 shrink-0" />
                       <span className="text-[9px] truncate">{seeker.location}</span>
                     </div>
 
                     {/* Skills list */}
                     <div className="flex flex-wrap gap-1 mt-2.5">
                       {seeker.skillsNeeded.map(skill => (
-                        <span key={skill} className="text-[9px] bg-sky-950/40 text-sky-300 border border-sky-900 rounded px-1.5 py-0.5 font-bold font-sans">
+                        <span key={skill} className="text-[9px] bg-white text-gray-600 border border-gray-200 rounded px-1.5 py-0.5 font-bold font-sans shadow-xs">
                           {skill}
                         </span>
                       ))}
@@ -263,12 +268,12 @@ Hi ${hiringSeeker.name}! I have reviewed your expert profile on the Top 20 Candi
                     <button
                       type="button"
                       onClick={() => {
-                        onStartChat(seeker.name, `Hello ${seeker.name}! I detected your outstanding expert profile inside the Top 20 Candidate Board for ${selectedProvince} and want to align on calendars for a booking. Let's connect!`, seeker.avatar);
+                        onStartChat(seeker.name, `Hello ${seeker.name}! I detected your outstanding expert profile inside the Top 20 Candidates Board for ${selectedProvince} and want to align on calendars for a booking. Let's connect!`, seeker.avatar);
                         onClose();
                       }}
-                      className="bg-white/10 hover:bg-white/15 text-white border border-white/15 py-2 rounded-xl text-[11px] font-extrabold transition-all active:scale-95 flex items-center justify-center gap-1"
+                      className="bg-white hover:bg-gray-50 text-gray-900 border border-gray-200 py-2 rounded-xl text-[11px] font-extrabold transition-all active:scale-95 flex items-center justify-center gap-1 shadow-sm"
                     >
-                      <MessageSquare size={12} />
+                      <MessageSquare size={12} className="text-blue-600" />
                       <span>Inquire & Chat</span>
                     </button>
                     <button
@@ -276,9 +281,9 @@ Hi ${hiringSeeker.name}! I have reviewed your expert profile on the Top 20 Candi
                       onClick={() => {
                         handleInitiateHire(seeker);
                       }}
-                      className="bg-yellow-400 hover:bg-yellow-500 text-yellow-950 py-2 rounded-xl text-[11px] font-black transition-all active:scale-95 flex items-center justify-center gap-1 shadow-md border border-yellow-300"
+                      className="bg-gray-900 hover:bg-black text-white py-2 rounded-xl text-[11px] font-black transition-all active:scale-95 flex items-center justify-center gap-1 shadow-md"
                     >
-                      <Sparkles size={12} />
+                      <Sparkles size={12} className="text-amber-400" />
                       <span>Instant Hire</span>
                     </button>
                   </div>
@@ -290,8 +295,8 @@ Hi ${hiringSeeker.name}! I have reviewed your expert profile on the Top 20 Candi
       </div>
 
       {/* Bottom info footer */}
-      <div className="p-3 border-t border-white/10 bg-slate-900/60 backdrop-blur-md text-center text-[10px] text-gray-400 leading-none sticky bottom-0 shrink-0 select-none font-sans">
-        💡 All 20 Candidates are fully verified for secure local workspace safety
+      <div className="p-3 border-t border-gray-100 bg-gray-50 text-center text-[10px] text-gray-400 leading-none sticky bottom-0 shrink-0 select-none font-sans">
+        💡 Top 20 Candidates are rated and liked by our client community
       </div>
 
       {/* 💼 Interactive Dual-Path Candidate Hiring Escrow Modal */}
@@ -330,7 +335,7 @@ Hi ${hiringSeeker.name}! I have reviewed your expert profile on the Top 20 Candi
                       }`}
                     >
                       <div className="flex items-center gap-2">
-                        <CheckCircle2 size={16} className={hiringType === 'casual' ? 'text-blue-600' : 'text-gray-300'} />
+                        <BadgeCheck size={16} fill="black" className={hiringType === 'casual' ? 'text-white' : 'text-gray-300'} />
                         <span className="font-black text-xs text-[#111827]">Casual / Gig Engagement</span>
                       </div>
                       <p className="text-[10px] text-gray-500 mt-1 pl-6 leading-relaxed">
@@ -348,7 +353,7 @@ Hi ${hiringSeeker.name}! I have reviewed your expert profile on the Top 20 Candi
                       }`}
                     >
                       <div className="flex items-center gap-2">
-                        <CheckCircle2 size={16} className={hiringType === 'permanent' ? 'text-blue-600' : 'text-gray-300'} />
+                        <BadgeCheck size={16} fill="black" className={hiringType === 'permanent' ? 'text-white' : 'text-gray-300'} />
                         <span className="font-black text-xs text-[#111827]">Permanent / Full Agreement</span>
                       </div>
                       <p className="text-[10px] text-gray-500 mt-1 pl-6 leading-relaxed">
@@ -401,7 +406,7 @@ Hi ${hiringSeeker.name}! I have reviewed your expert profile on the Top 20 Candi
                 <div className="space-y-4 font-sans text-center flex flex-col items-center">
                   <div className="text-center py-4 space-y-3">
                     <div className="w-16 h-16 bg-green-50 text-green-500 rounded-full flex items-center justify-center mx-auto border-2 border-green-200 scale-105 transition-all duration-300">
-                      <CheckCircle2 size={36} strokeWidth={2.5} />
+                      <BadgeCheck size={36} fill="black" className="text-white" />
                     </div>
                     <div className="space-y-1">
                       <h4 className="text-base font-black text-green-600 uppercase tracking-widest">Hired Successfully!</h4>

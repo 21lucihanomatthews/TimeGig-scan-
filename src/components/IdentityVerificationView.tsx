@@ -6,7 +6,7 @@ import {
   FileText, 
   ChevronLeft, 
   AlertCircle, 
-  CheckCircle2, 
+  BadgeCheck, 
   XCircle,
   ScanFace,
   Loader2,
@@ -130,7 +130,15 @@ interface IdentityVerificationViewProps {
 type VerificationStep = "intro" | "profile-check" | "id-upload" | "selfie" | "analyzing" | "result";
 
 export default function IdentityVerificationView({ onBack, onComplete }: IdentityVerificationViewProps) {
-  const [step, setStep] = useState<VerificationStep>("intro");
+  const isAlreadyVerified = localStorage.getItem("is_verified") === "true";
+  const [step, setStep] = useState<VerificationStep>(isAlreadyVerified ? "result" : "intro");
+  
+  useEffect(() => {
+    if (isAlreadyVerified) {
+      setIsSuccess(true);
+    }
+  }, [isAlreadyVerified]);
+
   const [idFile, setIdFile] = useState<string | null>(null);
   const [selfieFile, setSelfieFile] = useState<string | null>(null);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -502,8 +510,8 @@ export default function IdentityVerificationView({ onBack, onComplete }: Identit
           >
             {isSuccess ? (
               <>
-                <div className="w-24 h-24 bg-green-50 rounded-full flex items-center justify-center mx-auto border-4 border-green-100 shadow-xl shadow-green-50">
-                  <CheckCircle2 className="text-green-600 w-12 h-12" />
+                <div className="w-24 h-24 bg-white rounded-full flex items-center justify-center mx-auto shadow-xl shadow-gray-100">
+                  <BadgeCheck fill="black" className="text-white w-16 h-16" />
                 </div>
                 <div className="space-y-2">
                   <h1 className="text-3xl font-black text-gray-900 tracking-tight">Identity Verified</h1>
@@ -515,8 +523,8 @@ export default function IdentityVerificationView({ onBack, onComplete }: Identit
                   <div className="flex items-center gap-3">
                     <div className="relative">
                       <img src={selfieFile || ""} className="w-12 h-12 rounded-full object-cover border-2 border-blue-500" />
-                      <div className="absolute -bottom-1 -right-1 bg-black text-white p-0.5 rounded-full border border-gray-800">
-                        <CheckCircle2 size={12} />
+                      <div className="absolute -bottom-1 -right-1 bg-white rounded-full">
+                        <BadgeCheck size={16} fill="black" className="text-white" />
                       </div>
                     </div>
                     <div className="text-left">
@@ -533,7 +541,7 @@ export default function IdentityVerificationView({ onBack, onComplete }: Identit
                   onClick={onComplete}
                   className="w-full bg-blue-600 text-white font-extrabold py-4 rounded-2xl shadow-xl shadow-blue-100"
                 >
-                  Return to Profile
+                  Enter Profile Vault
                 </button>
               </>
             ) : (

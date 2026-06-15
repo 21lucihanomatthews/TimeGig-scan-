@@ -12,7 +12,7 @@ import {
   X, 
   Camera,
   ShieldCheck,
-  CheckCircle2,
+  BadgeCheck,
   Trash2,
   MessageSquare,
   MoreVertical,
@@ -40,9 +40,10 @@ interface MarketViewProps {
   onCreatingChange?: (isCreating: boolean) => void;
   deductCoins: (amount: number) => boolean;
   isVerified?: boolean;
+  onPromote: () => void;
 }
 
-export default function MarketView({ onInterested, onCreatingChange, deductCoins, isVerified }: MarketViewProps) {
+export default function MarketView({ onInterested, onCreatingChange, deductCoins, isVerified, onPromote }: MarketViewProps) {
   const [items, setItems] = useState<MarketItem[]>(INITIAL_MARKET_DATA);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
@@ -177,6 +178,25 @@ export default function MarketView({ onInterested, onCreatingChange, deductCoins
         >
           <Plus size={14} /> Sell Item
         </motion.button>
+      </div>
+
+      {/* 🌍 PROMOTIONAL COMMUNITY TEASER 🌍 */}
+      <div 
+        onClick={onPromote}
+        className="bg-indigo-600 rounded-3xl p-5 shadow-lg shadow-indigo-100 flex items-center justify-between gap-4 cursor-pointer hover:bg-indigo-700 transition-all active:scale-[0.98] border border-indigo-500 group"
+      >
+        <div className="flex-1 space-y-1">
+          <div className="flex items-center gap-1.5">
+            <span className="text-white text-[10px] font-black uppercase tracking-widest bg-white/20 px-2 py-0.5 rounded">Build Community</span>
+          </div>
+          <h3 className="text-base font-black text-white tracking-tight">Expand the Marketplace 📈</h3>
+          <p className="text-[10px] text-indigo-100 font-medium leading-relaxed max-w-[200px]">
+            Help neighbors find better deals. Earn <span className="text-amber-300 font-black">20 Coins</span> per connection.
+          </p>
+        </div>
+        <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-indigo-600 shadow-xl group-hover:scale-110 transition-transform">
+          <ShoppingBag size={24} />
+        </div>
       </div>
 
       <div className="relative">
@@ -359,7 +379,7 @@ export default function MarketView({ onInterested, onCreatingChange, deductCoins
                   <div className="ml-auto">
                     {selectedItem.seller === "James W." ? (
                        <div className="flex items-center gap-1.5 text-green-600 text-[10px] font-bold bg-green-50 px-2.5 py-1 rounded-lg border border-green-100">
-                         <CheckCircle2 size={12} /> Verified
+                         <BadgeCheck size={12} fill="black" className="text-white" /> Verified
                        </div>
                     ) : (
                       <div className="flex items-center gap-1.5 text-amber-600 text-[10px] font-bold bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-100 italic">
@@ -428,7 +448,7 @@ export default function MarketView({ onInterested, onCreatingChange, deductCoins
               className="max-w-xs space-y-6"
             >
               <div className="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center mx-auto text-green-600">
-                <CheckCircle2 size={48} className="animate-bounce" />
+                <BadgeCheck size={48} fill="black" className="text-white animate-bounce" />
               </div>
               <div className="space-y-2">
                 <h2 className="text-3xl font-black text-gray-900 tracking-tight">Congratulations!</h2>

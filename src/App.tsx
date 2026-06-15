@@ -8,7 +8,7 @@ import { motion } from "motion/react";
 import ChatView from "./components/ChatView";
 import ChatListView from "./components/ChatListView";
 import ProfileView from "./components/ProfileView";
-import PersonalProfileEditView from "./components/PersonalProfileEditView";
+
 import SeekersView from "./components/SeekersView";
 import CwalletView from "./components/CwalletView";
 import MarketView from "./components/MarketView";
@@ -22,6 +22,8 @@ import WorldCupFeverHub from "./components/WorldCupFeverHub";
 import FeatureExplainer from "./components/FeatureExplainer";
 import Top20SeekersBoard from "./components/Top20SeekersBoard";
 import TimeGigLogo from "./components/TimeGigLogo";
+import VerifiedVaultView from "./components/VerifiedVaultView";
+import PromoteAppView from "./components/PromoteAppView";
 import {
   Home,
   MessageSquare,
@@ -57,8 +59,10 @@ import {
   ShoppingBag,
   Trash2,
   Power,
+  Share2,
   LogOut,
   LifeBuoy,
+  BadgeCheck,
   Crown,
   Upload,
 } from "lucide-react";
@@ -89,6 +93,14 @@ interface Gig {
   timing: string;
   date?: string;
   isUserCreated?: boolean;
+}
+
+interface Friend {
+  id: string | number;
+  name: string;
+  avatar: string;
+  status: "online" | "offline";
+  lastMessage?: string;
 }
 
 interface GigCardProps {
@@ -123,7 +135,7 @@ const GigCard: React.FC<GigCardProps> = ({ gig, onClick }) => {
 
         {/* Photo Count tag is shown if there are multiple images */}
         {gig.images && gig.images.length > 1 && (
-          <div className="absolute bottom-1.5 right-1.5 bg-black/60 backdrop-blur-xs text-[8px] font-bold text-white px-1.5 py-0.5 rounded">
+          <div className="absolute bottom-1.5 right-1.5 bg-black text-[8px] font-bold text-white px-1.5 py-0.5 rounded">
             {gig.images.length}
           </div>
         )}
@@ -308,9 +320,10 @@ interface GigsFeedProps {
   onSelectGig: (gig: Gig) => void;
   isVerified?: boolean;
   onStartChat: (name: string, text: string, avatar: string) => void;
+  onPromote: () => void;
 }
 
-function GigsFeed({ gigs, onShowCreateGig, onSelectGig, isVerified, onStartChat }: GigsFeedProps) {
+function GigsFeed({ gigs, onShowCreateGig, onSelectGig, isVerified, onStartChat, onPromote }: GigsFeedProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const filteredGigs = gigs.filter(
     (gig) =>
@@ -373,8 +386,27 @@ function GigsFeed({ gigs, onShowCreateGig, onSelectGig, isVerified, onStartChat 
         </div>
       </div>
 
+      {/* 🌍 PROMOTIONAL COMMUNITY TEASER 🌍 */}
+      <div 
+        onClick={onPromote}
+        className="bg-blue-600 rounded-3xl p-5 shadow-lg shadow-blue-100 flex items-center justify-between gap-4 cursor-pointer hover:bg-blue-700 transition-all active:scale-[0.98] border border-blue-500 group"
+      >
+        <div className="flex-1 space-y-1">
+          <div className="flex items-center gap-1.5">
+            <span className="text-white text-[10px] font-black uppercase tracking-widest bg-white/20 px-2 py-0.5 rounded">Promote TimeGIG</span>
+          </div>
+          <h3 className="text-base font-black text-white tracking-tight">Build the Community Together 🌍</h3>
+          <p className="text-[10px] text-blue-100 font-medium leading-relaxed max-w-[200px]">
+            Help friends find experts and secure gigs. Earn <span className="text-amber-300 font-black">20 Coins</span> per referral.
+          </p>
+        </div>
+        <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-blue-600 shadow-xl group-hover:scale-110 transition-transform">
+          <Share2 size={24} />
+        </div>
+      </div>
+
       {/* 🌟 FEATURE EXPLAINER ENGINE & GLASSBOARD 🌟 */}
-      <FeatureExplainer onStartChat={onStartChat} isVerified={!!isVerified} />
+      {!isVerified && <FeatureExplainer onStartChat={onStartChat} isVerified={!!isVerified} />}
 
       {/* Styled Search Input premium decoration */}
       <div className="relative">
@@ -414,7 +446,13 @@ export default function App() {
   });
   const [userData, setUserData] = useState(() => {
     const saved = localStorage.getItem("user_account");
-    const account = saved ? JSON.parse(saved) : null;
+    let account = null;
+    try {
+      account = saved ? JSON.parse(saved) : null;
+    } catch (e) {
+      console.error("Failed to parse user_account", e);
+      account = null;
+    }
     if (account && !account.isVerified) {
       account.isVerified = localStorage.getItem("is_verified") === "true";
     }
@@ -486,6 +524,11 @@ export default function App() {
   const [showReferralModal, setShowReferralModal] = useState(false);
   const [referralCode, setReferralCode] = useState("");
   const [showTopMenu, setShowTopMenu] = useState(false);
+  const [showLogoutShareModal, setShowLogoutShareModal] = useState(false);
+  
+  // Friends System State
+  const [friends, setFriends] = useState<Friend[]>([]);
+  const [friendRequests, setFriendRequests] = useState<any[]>([]);
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [notificationSettings, setNotificationSettings] = useState({
     market: true,
@@ -513,6 +556,39 @@ export default function App() {
   const [showHelp, setShowHelp] = useState(false);
   const [showWorldCupHub, setShowWorldCupHub] = useState(false);
   const [showTop20Seekers, setShowTop20Seekers] = useState(false);
+  const [seekers, setSeekers] = useState<any[]>([]);
+  
+  useEffect(() => {
+    // Reset old mock data
+    localStorage.removeItem('seekers_list_v2');
+    localStorage.removeItem('user_liked_seeker_ids');
+    localStorage.removeItem('user_followed_seeker_ids');
+    
+    const saved = localStorage.getItem('seekers_list_v3');
+    let loadedSeekers: any[] = [];
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        loadedSeekers = Array.isArray(parsed) ? parsed : [];
+      } catch (e) {
+        loadedSeekers = [];
+      }
+    }
+
+    // Ensure all seekers have valid fields and filter out all mock seekers
+    const migrated = loadedSeekers
+      .filter((s: any) => s && s.isUserCreated === true)
+      .map((s: any) => ({
+        ...s,
+        likes: typeof s.likes === 'number' ? s.likes : (parseInt(String(s.likes || 0), 10) || 0),
+        images: Array.isArray(s.images) ? s.images : (s.image ? [s.image] : []),
+        skillsNeeded: Array.isArray(s.skillsNeeded) ? s.skillsNeeded : []
+      }));
+
+    setSeekers(migrated);
+    localStorage.setItem('seekers_list_v3', JSON.stringify(migrated));
+  }, []);
+
   const [isDocumentViewerOpen, setIsDocumentViewerOpen] = useState(false);
   const [documentViewerSeeker, setDocumentViewerSeeker] = useState<any>(null);
   const [isMeetingArrivalOpen, setIsMeetingArrivalOpen] = useState(false);
@@ -578,6 +654,51 @@ export default function App() {
       setActiveToast(null);
     }, 5000);
   };
+
+  const handleWallpaperUpload = (file: File) => {
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        let width = img.width;
+        let height = img.height;
+
+        // Max dimensions for wallpaper to stay within localStorage/performance limits
+        const MAX_SIZE = 1200;
+        if (width > height) {
+          if (width > MAX_SIZE) {
+            height *= MAX_SIZE / width;
+            width = MAX_SIZE;
+          }
+        } else {
+          if (height > MAX_SIZE) {
+            width *= MAX_SIZE / height;
+            height = MAX_SIZE;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          const compressed = canvas.toDataURL("image/jpeg", 0.7);
+          setAppBackgroundUrl(compressed);
+          showToastNotification("Wallpaper set successfully!", "success");
+        }
+      };
+      img.src = event.target?.result as string;
+    };
+    reader.readAsDataURL(file);
+  };
+
+  useEffect(() => {
+    if (isAuthenticated && isVerified && !sessionStorage.getItem("welcomed_back")) {
+      showToastNotification("Welcome back!", "success");
+      sessionStorage.setItem("welcomed_back", "true");
+    }
+  }, [isAuthenticated, isVerified]);
 
   const handleApplyOutcome = (outcome: "approve" | "reject") => {
     if (!applyGigState) return;
@@ -742,6 +863,31 @@ export default function App() {
     } else {
       showToastNotification("Account re-enabled! Welcome back.", "success");
     }
+  };
+
+  const handleAddFriend = (newFriend: any) => {
+    if (friends.find(f => f.id === newFriend.id)) {
+      showToastNotification(`${newFriend.name} is already your friend!`, "info");
+      return;
+    }
+    
+    // Simulate approval process
+    showToastNotification(`Friend request sent to ${newFriend.name}!`, "success");
+    
+    // Auto-approve after 4 seconds for simulation
+    setTimeout(() => {
+      setFriends(prev => {
+        if (prev.find(f => f.id === newFriend.id)) return prev;
+        const approvedFriend: Friend = {
+          id: newFriend.id,
+          name: newFriend.name,
+          avatar: newFriend.avatar,
+          status: "online"
+        };
+        showToastNotification(`${newFriend.name} accepted your friend request!`, "success");
+        return [...prev, approvedFriend];
+      });
+    }, 4000);
   };
 
   const handleDeleteGig = (id: number) => {
@@ -935,7 +1081,7 @@ export default function App() {
       return (
         <div className="fixed inset-0 z-45 bg-gray-50 flex flex-col max-w-sm mx-auto shadow-2xl overflow-hidden animate-in fade-in slide-in-from-bottom duration-250 text-left">
           {/* Header Sticky Navigation Bar */}
-          <div className="sticky top-0 bg-white/95 backdrop-blur-md px-4 py-3.5 border-b border-gray-100 flex items-center justify-between z-10 shrink-0">
+          <div className="sticky top-0 bg-white px-4 py-3.5 border-b border-gray-100 flex items-center justify-between z-10 shrink-0">
             <button
               type="button"
               onClick={() => setSelectedGigForDetails(null)}
@@ -1004,8 +1150,8 @@ export default function App() {
                           `https://ui-avatars.com/api/?name=${encodeURIComponent(hirerName)}&background=random`;
                       }}
                     />
-                    <div className="absolute -bottom-0.5 -right-0.5 bg-black text-white p-0.5 rounded-full border border-white">
-                      <CheckCircle2 size={10} />
+                    <div className="absolute -bottom-0.5 -right-0.5 rounded-full border border-white">
+                      <BadgeCheck size={12} fill="black" className="text-white bg-white rounded-full" />
                     </div>
                   </div>
                   <div>
@@ -1131,11 +1277,14 @@ export default function App() {
             onSelectGig={(gig) => setSelectedGigForDetails(gig)}
             isVerified={isVerified}
             onStartChat={(name, text, avatar) => handleStartChatFromSeeker(name, text, avatar)}
+            onPromote={() => setActiveTab("promote")}
           />
         );
       case "seekers":
         return (
           <SeekersView
+            seekers={seekers}
+            setSeekers={setSeekers}
             deductCoins={deductCoins}
             onStartChat={(name, text, avatar) => {
               if (!isVerified) {
@@ -1145,7 +1294,9 @@ export default function App() {
               handleStartChatFromSeeker(name, text, avatar);
             }}
             onCreatingChange={setIsCreatingSeeker}
+            onAddFriend={handleAddFriend}
             isVerified={isVerified}
+            onPromote={() => setActiveTab("promote")}
           />
         );
       case "market":
@@ -1161,6 +1312,7 @@ export default function App() {
             }}
             onCreatingChange={setIsCreatingMarketItem}
             isVerified={isVerified}
+            onPromote={() => setActiveTab("promote")}
           />
         );
       case "cwallet":
@@ -1232,34 +1384,25 @@ export default function App() {
             onBack={() => setActiveTab("home")}
           />
         );
-      case "user":
-        return (
-          <PersonalProfileEditView
-            isLocked={isProfileLocked}
-            onBack={() => setActiveTab("home")}
-            onVerify={() => setShowVerification(true)}
-            onSubmit={() => {
-              const currentDataString = localStorage.getItem("profileFormData");
-              const previousDataString = localStorage.getItem(
-                "lastSavedProfileData",
-              );
 
-              if (currentDataString !== previousDataString) {
-                setCongratulatoryMessage("Congratulations");
-                localStorage.setItem(
-                  "lastSavedProfileData",
-                  currentDataString || "",
-                );
-              }
-              setIsProfileLocked(true);
-              setTimeout(() => {
-                setCongratulatoryMessage("");
-                setActiveTab("home");
-              }, 3000);
-            }}
-            onUnlock={() => setIsProfileLocked(false)}
+      case "vault":
+        return (
+          <VerifiedVaultView 
+            onBack={() => setActiveTab("home")}
+            userName={userData?.name || "Verified Member"}
           />
         );
+
+      case "promote":
+        return (
+          <PromoteAppView 
+            onBack={() => {
+               setActiveTab("home");
+            }}
+            onShowToast={showToastNotification}
+          />
+        );
+
       case "bell":
         return (
           <div className="p-4 max-w-md mx-auto space-y-6">
@@ -1447,7 +1590,8 @@ export default function App() {
         onComplete={(data) => {
           setUserData(data);
           setIsAuthenticated(true);
-          setShowOnboarding(true);
+          const verified = localStorage.getItem("is_verified") === "true";
+          setShowOnboarding(!verified);
         }}
       />
     );
@@ -1466,6 +1610,7 @@ export default function App() {
           setShowVerification(false);
           setCoinBalance(prev => prev + 15);
           showToastNotification("Identity verified successfully! You received 15 free coins.", "success");
+          setActiveTab("vault");
         }}
       />
     );
@@ -1494,25 +1639,31 @@ export default function App() {
 
   return (
     <div
-      className="flex flex-col h-screen bg-gray-50 relative overflow-hidden"
-      style={{
-        backgroundImage: appBackgroundUrl ? `url(${appBackgroundUrl})` : "none",
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-      }}
+      className="flex flex-col h-screen bg-white relative overflow-hidden"
     >
       {appBackgroundUrl && (
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            backdropFilter: `blur(${appBackgroundBlur}px)`,
-            backgroundColor: "rgba(255,255,255,0.3)",
-          }}
-        />
+        <>
+          <div 
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              backgroundImage: `url(${appBackgroundUrl})`,
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+              filter: `blur(${appBackgroundBlur}px)`,
+              transform: appBackgroundBlur > 0 ? "scale(1.1)" : "scale(1)",
+            }}
+          />
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              backgroundColor: "rgba(255,255,255,0.7)",
+            }}
+          />
+        </>
       )}
       <div className="relative flex flex-col h-full z-0">
         {isAccountDisabled && (
-          <div className="absolute inset-0 z-[200] bg-white/90 backdrop-blur-md flex items-center justify-center p-6 text-center">
+          <div className="absolute inset-0 z-[200] bg-white flex items-center justify-center p-6 text-center">
             <motion.div 
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
@@ -1553,6 +1704,17 @@ export default function App() {
               }}
               transition={{ duration: 0.3, ease: "easeInOut" }}
             >
+              {/* Top 20 Candidates Button */}
+              <motion.button
+                className={`relative bg-amber-50 shadow-md hover:shadow-lg transition-all px-4 py-2 rounded-full flex items-center justify-center gap-2 text-amber-700 border border-amber-200`}
+                onClick={() => setShowTop20Seekers(true)}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <Crown size={20} className="text-amber-600" />
+                <span className="text-[11px] font-black uppercase tracking-wider">Top 20</span>
+              </motion.button>
+
               <motion.button
                 className={`relative bg-white shadow-md hover:shadow-lg transition-all p-3 rounded-full flex items-center justify-center ${activeTab === "cwallet" ? "text-blue-600 font-bold" : "text-gray-700"} hover:text-blue-600`}
                 onClick={() => setActiveTab("cwallet")}
@@ -1615,8 +1777,8 @@ export default function App() {
                       )}
                     </div>
                     {isVerified && (
-                      <div className="absolute -bottom-1 -right-1 bg-black text-white p-0.5 rounded-full border border-white shadow-sm z-10">
-                        <CheckCircle2 size={10} />
+                      <div className="absolute -bottom-0.5 -right-0.5 z-10">
+                        <BadgeCheck size={16} fill="black" className="text-white bg-white rounded-full" />
                       </div>
                     )}
                   </div>
@@ -1629,25 +1791,30 @@ export default function App() {
                       onClick={() => setShowTopMenu(false)}
                     ></div>
                     <div className="absolute top-14 right-0 z-50 bg-white rounded-xl shadow-xl w-48 border border-gray-100 overflow-hidden transform origin-top-right transition-all">
-                      <button
-                        onClick={() => {
-                          setShowTopMenu(false);
-                          setShowTop20Seekers(true);
-                        }}
-                        className="w-full text-left px-4 py-3 text-sm font-semibold text-yellow-600 hover:bg-yellow-50 flex items-center gap-2"
-                      >
-                        <Crown size={16} className="text-yellow-500 animate-pulse" /> Top 20 Seekers
-                      </button>
-                      <div className="h-[1px] bg-gray-100"></div>
-                      <button
-                        onClick={() => {
-                          setShowTopMenu(false);
-                          setActiveTab("user");
-                        }}
-                        className="w-full text-left px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 flex items-center gap-2"
-                      >
-                        <User size={16} /> Profile
-                      </button>
+                      {!isVerified ? (
+                        <button
+                          onClick={() => {
+                            setShowTopMenu(false);
+                            setShowVerification(true);
+                          }}
+                          className="w-full text-left px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                        >
+                          <ShieldCheck size={16} /> Identity Verification
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => {
+                            setShowTopMenu(false);
+                            setActiveTab("vault");
+                          }}
+                          className="w-full text-left px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 flex items-center justify-between gap-2"
+                        >
+                          <div className="flex items-center gap-2">
+                             <ShieldCheck size={16} className="text-black" /> Verified Profile Vault
+                          </div>
+                          <BadgeCheck size={16} fill="black" className="text-white" />
+                        </button>
+                      )}
                       <div className="h-[1px] bg-gray-100"></div>
                       {userData?.email === "21lucihanomatthews@gmail.com" && (
                         <button
@@ -1711,6 +1878,23 @@ export default function App() {
           !showProfile &&
           !isTopUpActive && (
             <footer className="fixed bottom-0 w-full bg-white border-t border-gray-200 h-16 flex items-center justify-around px-2 shadow-lg z-30">
+              {/* Approved Friends Shelf Appearing in Bottom Menu Bar */}
+              {friends.length > 0 && (
+                <div className="absolute -top-14 left-0 w-full bg-white/95 backdrop-blur-sm border-t border-gray-100 h-14 flex items-center gap-2 px-4 overflow-x-auto scrollbar-none shadow-sm">
+                  <span className="text-[9px] font-black uppercase text-gray-400 tracking-wider shrink-0 mr-1">Friends:</span>
+                  {friends.map(friend => (
+                    <button 
+                      key={friend.id}
+                      onClick={() => handleStartChatFromSeeker(friend.name, `Hello ${friend.name}! Let's connect!`, friend.avatar)}
+                      className="relative shrink-0 active:scale-90 transition-transform group"
+                    >
+                      <img src={friend.avatar} className="w-9 h-9 rounded-full border-2 border-white shadow-sm object-cover group-hover:border-blue-200 transition-colors" alt={friend.name} />
+                      <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-white shadow-xs"></div>
+                    </button>
+                  ))}
+                </div>
+              )}
+
               <button
                 onClick={() => setActiveTab("home")}
                 className={`flex flex-col items-center justify-center p-2 transition-colors w-24 ${activeTab === "home" ? "text-blue-600 font-bold" : "text-gray-500"}`}
@@ -1754,11 +1938,12 @@ export default function App() {
           onStartChat={handleStartChatFromSeeker}
           deductCoins={deductCoins}
           coinBalance={coinBalance}
+          allSeekers={seekers}
         />
 
         {/* Apply to Gig Flow Overlay */}
         {applyGigState && (
-          <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-[100] bg-gray-900/90 flex items-center justify-center p-4">
             <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl flex flex-col gap-4">
               {applyGigState.stage === "permission-request" && (
                 <>
@@ -1976,7 +2161,7 @@ export default function App() {
 
         {/* Host Review Application Overlay */}
         {reviewApplicationState && (
-          <div className="fixed inset-0 z-[100] bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-[100] bg-slate-950 flex items-center justify-center p-4">
             <motion.div 
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
@@ -1984,7 +2169,7 @@ export default function App() {
             >
               {/* Header with Background Pattern/Color */}
               <div className="h-32 bg-indigo-600 relative flex items-end justify-center p-6">
-                <div className="absolute top-4 right-4 bg-white/10 backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-black text-white uppercase tracking-tighter border border-white/20">
+                <div className="absolute top-4 right-4 bg-gray-800 px-3 py-1 rounded-full text-[10px] font-black text-white uppercase tracking-tighter border border-white/20">
                   Application Review
                 </div>
                 <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-white shadow-xl absolute -bottom-12 translate-y-0">
@@ -2268,14 +2453,7 @@ export default function App() {
                         onChange={(e) => {
                           const file = e.target.files?.[0];
                           if (file) {
-                            const reader = new FileReader();
-                            reader.onload = (event) => {
-                              if (event.target?.result) {
-                                setAppBackgroundUrl(event.target.result as string);
-                                showToastNotification("Wallpaper set successfully!", "success");
-                              }
-                            };
-                            reader.readAsDataURL(file);
+                            handleWallpaperUpload(file);
                           }
                         }}
                       />
@@ -2284,13 +2462,27 @@ export default function App() {
                     <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
                       Wallpaper URL
                     </label>
-                    <input
-                      type="url"
-                      placeholder="https://example.com/wallpaper.jpg"
-                      value={appBackgroundUrl}
-                      onChange={(e) => setAppBackgroundUrl(e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
-                    />
+                    <div className="flex gap-2">
+                        <input
+                          type="url"
+                          placeholder="https://example.com/wallpaper.jpg"
+                          value={appBackgroundUrl}
+                          onChange={(e) => setAppBackgroundUrl(e.target.value)}
+                          className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                        />
+                        {appBackgroundUrl && (
+                          <button
+                            onClick={() => {
+                              setAppBackgroundUrl("");
+                              showToastNotification("Wallpaper cleared", "info");
+                            }}
+                            className="px-4 py-3 bg-red-50 text-red-600 rounded-xl border border-red-100 hover:bg-red-100 transition flex items-center justify-center shrink-0"
+                            title="Clear Background"
+                          >
+                            <Trash2 size={18} />
+                          </button>
+                        )}
+                    </div>
                     <p className="text-[10px] text-slate-400 mt-1">
                       Leave empty to remove wallpaper. Or upload/clear a file.
                     </p>
@@ -2383,7 +2575,7 @@ export default function App() {
 
         {/* Referral Modal Overlay */}
         {showReferralModal && (
-          <div className="fixed inset-0 z-[140] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-[140] bg-slate-900 flex items-center justify-center p-4">
             <div className="bg-white rounded-3xl p-6 w-full max-w-sm text-center shadow-2xl relative overflow-hidden">
               <div className="absolute top-0 inset-x-0 h-32 bg-gradient-to-b from-blue-50 to-white -z-10" />
               <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-5 shadow-inner">
@@ -2434,6 +2626,75 @@ export default function App() {
                   className="w-full py-3 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold rounded-xl transition active:scale-[0.98]"
                 >
                   Maybe Later
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {showLogoutShareModal && (
+          <div className="fixed inset-0 z-[200] bg-slate-900 flex items-center justify-center p-4">
+            <div className="bg-white rounded-3xl p-6 w-full max-w-sm text-center shadow-2xl relative overflow-hidden">
+              <div className="absolute top-0 inset-x-0 h-32 bg-gradient-to-b from-blue-50 to-white -z-10" />
+              <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-5 shadow-inner">
+                <Share2 className="w-10 h-10 text-blue-600" />
+              </div>
+              <h2 className="text-2xl font-black text-gray-900 mb-2">
+                Share & Earn!
+              </h2>
+              <p className="text-gray-500 text-sm mb-8 leading-relaxed px-2">
+                Love using TimeGiG? Share the app with your friends to earn 
+                <strong className="text-yellow-600 font-bold bg-yellow-50 px-2 py-0.5 rounded mx-1">
+                  20 Coins
+                </strong> 
+                for every successful user who signs up!
+              </p>
+              <div className="space-y-3">
+                <button
+                  onClick={async () => {
+                    const shareUrl = "https://timegig.app/join?ref=FRIEND20";
+                    if (navigator.share) {
+                      try {
+                        await navigator.share({
+                          title: 'Join TimeGiG',
+                          text: 'Join TimeGiG and we both get 20 coins!',
+                          url: shareUrl,
+                        });
+                        showToastNotification("Thanks for sharing!", "success");
+                      } catch (err) {
+                        console.log('Error sharing', err);
+                      } finally {
+                        setShowLogoutShareModal(false);
+                        handleLogout();
+                      }
+                    } else {
+                      navigator.clipboard.writeText(shareUrl).then(() => {
+                        showToastNotification("Referral link copied! 20 coins will be awarded when they join.", "success");
+                        setShowLogoutShareModal(false);
+                        handleLogout();
+                      });
+                    }
+                  }}
+                  className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition shadow shadow-blue-500/20 active:scale-[0.98] flex justify-center items-center gap-2"
+                >
+                  <Share2 size={18} /> Share App & Logout
+                </button>
+                <button
+                  onClick={() => {
+                    setShowLogoutShareModal(false);
+                    handleLogout();
+                  }}
+                  className="w-full py-3 bg-red-50 hover:bg-red-100 text-red-600 font-bold rounded-xl transition active:scale-[0.98]"
+                >
+                  Skip & Logout
+                </button>
+                <button
+                  onClick={() => {
+                    setShowLogoutShareModal(false);
+                  }}
+                  className="w-full py-3 text-slate-400 hover:text-slate-600 font-bold rounded-xl transition underline"
+                >
+                  Cancel
                 </button>
               </div>
             </div>
@@ -2552,6 +2813,34 @@ export default function App() {
                 </div>
 
                 <div className="space-y-4 pt-4 border-t border-gray-50">
+                  <h3 className="text-[11px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4">Promote Community</h3>
+                  <button
+                    onClick={() => {
+                      setShowSettingsModal(false);
+                      setActiveTab("promote");
+                    }}
+                    className="w-full flex items-center justify-between p-5 bg-blue-50/50 rounded-3xl border border-blue-100 hover:bg-blue-100/50 transition-all text-left shadow-sm"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 bg-blue-600 rounded-2xl flex items-center justify-center text-white">
+                        <Share2 size={20} />
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-gray-900 text-sm">
+                          Promote & Earn
+                        </h3>
+                        <p className="text-[10px] text-blue-600 font-medium font-mono">
+                          Earn 20 Coins per friend
+                        </p>
+                      </div>
+                    </div>
+                    <div className="bg-amber-400 text-white px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-tighter shadow-sm animate-pulse">
+                      Hot
+                    </div>
+                  </button>
+                </div>
+
+                <div className="space-y-4 pt-4 border-t border-gray-50">
                   <h3 className="text-[11px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4">Account Security</h3>
                   <div className="space-y-3">
                     <div className="flex items-center justify-between p-5 bg-red-50/50 rounded-3xl border border-red-100">
@@ -2577,7 +2866,7 @@ export default function App() {
                     </div>
 
                     <button
-                      onClick={handleLogout}
+                      onClick={() => setShowLogoutShareModal(true)}
                       className="w-full flex items-center justify-between p-5 bg-white rounded-3xl border border-gray-100 hover:bg-gray-50 transition-all text-left shadow-sm"
                     >
                       <div className="flex items-center gap-4">

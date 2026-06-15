@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Star, MapPin, User, MoreVertical, ShieldAlert, CheckCircle2, Shield, X, AlertTriangle, ShieldCheck } from 'lucide-react';
+import { ArrowLeft, Star, MapPin, User, MoreVertical, ShieldAlert, BadgeCheck, Shield, X, AlertTriangle, ShieldCheck, Share2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 interface ProfileViewProps {
@@ -37,6 +37,27 @@ const ProfileView: React.FC<ProfileViewProps> = ({ onBack, userName, avatarUrl, 
     setBlocked(true);
     setShowBlockConfirm(false);
     triggerToast(`🚫 ${userName} has been successfully blocked. They will no longer be able to message or view your listings.`);
+  };
+
+  const handleShareProfile = () => {
+    const shareText = `Check out ${userName}'s profile on TimeGIG! Verified and ready to assist.`;
+    const shareUrl = window.location.href;
+    
+    if (navigator.share) {
+      navigator.share({
+        title: `${userName}'s Profile`,
+        text: shareText,
+        url: shareUrl,
+      }).then(() => {
+        triggerToast("Profile link shared successfully!");
+      }).catch(err => {
+        if (err.name !== 'AbortError') console.error(err);
+      });
+    } else {
+      const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(shareText + " " + shareUrl)}`;
+      window.open(whatsappUrl, '_blank');
+      triggerToast("Directing to WhatsApp for profile sharing...");
+    }
   };
 
   return (
@@ -102,6 +123,17 @@ const ProfileView: React.FC<ProfileViewProps> = ({ onBack, userName, avatarUrl, 
                   <Shield size={14} className="shrink-0" />
                   {blocked ? 'Blocked' : 'Block User'}
                 </button>
+                <div className="h-[1px] bg-gray-50 my-1 mx-2" />
+                <button 
+                  onClick={() => {
+                    handleShareProfile();
+                    setShowMenu(false);
+                  }} 
+                  className="flex items-center gap-2.5 text-indigo-600 hover:bg-indigo-50 font-extrabold text-xs w-full text-left px-3 py-2.5 rounded-xl transition"
+                >
+                  <Share2 size={14} className="shrink-0" />
+                  Share Profile
+                </button>
               </motion.div>
             )}
           </AnimatePresence>
@@ -118,8 +150,8 @@ const ProfileView: React.FC<ProfileViewProps> = ({ onBack, userName, avatarUrl, 
             onError={(e) => { (e.target as HTMLImageElement).src = 'https://ui-avatars.com/api/?name=' + encodeURIComponent(userName) + '&background=random'; }}
           />
           {isVerified && (
-            <div className="absolute bottom-1 right-1 bg-black text-white p-1 rounded-full border-4 border-white shadow-lg">
-              <CheckCircle2 size={24} />
+            <div className="absolute bottom-1 right-1 bg-white rounded-full shadow-lg">
+              <BadgeCheck size={32} fill="black" className="text-white" />
             </div>
           )}
         </div>

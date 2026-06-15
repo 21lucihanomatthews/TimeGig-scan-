@@ -22,7 +22,9 @@ import {
   Heart,
   MoreVertical,
   ShieldCheck,
-  AlertTriangle
+  AlertTriangle,
+  UserPlus,
+  Share2
 } from 'lucide-react';
 
 export const formatPriceForMarketplace = (priceStr: string) => {
@@ -72,14 +74,17 @@ const initialSeekers: Seeker[] = [];
 const categories = ['All', 'Labor', 'Creative', 'Education', 'Care'];
 
 interface SeekersViewProps {
+  seekers: Seeker[];
+  setSeekers: React.Dispatch<React.SetStateAction<Seeker[]>>;
   onStartChat: (seekerName: string, messageText: string, seekerAvatar: string) => void;
   onCreatingChange?: (isCreating: boolean) => void;
+  onAddFriend: (friend: any) => void;
   deductCoins: (amount: number) => boolean;
   isVerified?: boolean;
+  onPromote: () => void;
 }
 
-export default function SeekersView({ onStartChat, onCreatingChange, deductCoins, isVerified }: SeekersViewProps) {
-  const [seekers, setSeekers] = useState<Seeker[]>([]);
+export default function SeekersView({ seekers, setSeekers, onStartChat, onCreatingChange, onAddFriend, deductCoins, isVerified, onPromote }: SeekersViewProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [pitchedSeekers, setPitchedSeekers] = useState<number[]>([]);
@@ -125,6 +130,30 @@ export default function SeekersView({ onStartChat, onCreatingChange, deductCoins
   const triggerSeekerToast = (msg: string) => {
     setSeekerToast(msg);
     setTimeout(() => setSeekerToast(null), 4000);
+  };
+
+  const handleShareSeeker = (seeker: Seeker) => {
+    const shareText = `Check out ${seeker.name}'s service: ${seeker.title} on TimeGIG! Budget: ${seeker.budget}`;
+    const shareUrl = window.location.href;
+    
+    if (navigator.share) {
+      navigator.share({
+        title: seeker.title,
+        text: shareText,
+        url: shareUrl,
+      }).then(() => {
+        triggerSeekerToast("Shared successfully!");
+      }).catch(err => {
+        if (err.name !== 'AbortError') {
+          console.error(err);
+        }
+      });
+    } else {
+      // Fallback to WhatsApp
+      const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(shareText + " " + shareUrl)}`;
+      window.open(whatsappUrl, '_blank');
+      triggerSeekerToast("Directing to WhatsApp for sharing...");
+    }
   };
 
   const handleReportSeekerSubmit = (e: React.FormEvent) => {
@@ -186,62 +215,6 @@ export default function SeekersView({ onStartChat, onCreatingChange, deductCoins
   const handleRemoveImageFromNewList = (index: number) => {
     setNewImagesList(prev => prev.filter((_, i) => i !== index));
   };
-
-  useEffect(() => {
-    // Reset old mock data
-    localStorage.removeItem('seekers_list_v2');
-    localStorage.removeItem('user_liked_seeker_ids');
-    localStorage.removeItem('user_followed_seeker_ids');
-    
-    const saved = localStorage.getItem('seekers_list_v3');
-    let loadedSeekers: Seeker[] = [];
-    if (saved) {
-      try {
-        loadedSeekers = JSON.parse(saved);
-      } catch (e) {
-        loadedSeekers = [...initialSeekers];
-      }
-    } else {
-      loadedSeekers = [...initialSeekers];
-    }
-
-    // Always ensure all initialSeekers exist inside our loaded collection
-    initialSeekers.forEach((mockS) => {
-      const exists = loadedSeekers.some((s: any) => s.id === mockS.id);
-      if (!exists) {
-        loadedSeekers.push(mockS);
-      }
-    });
-
-    // Ensure all seekers have a valid numeric 'likes' field, and filter out all mock seekers
-    const migrated = loadedSeekers
-      .filter((s: any) => s.isUserCreated === true)
-      .map((s: any) => ({
-        ...s,
-        likes: typeof s.likes === 'number' && !isNaN(s.likes) ? s.likes : (s.likes || 0)
-      }));
-
-    setSeekers(migrated);
-    localStorage.setItem('seekers_list_v3', JSON.stringify(migrated));
-
-    const savedLikes = localStorage.getItem('user_liked_seeker_ids');
-    if (savedLikes) {
-      try {
-        setLikedSeekerIds(JSON.parse(savedLikes));
-      } catch (e) {
-        setLikedSeekerIds([]);
-      }
-    }
-
-    const savedFollows = localStorage.getItem('user_followed_seeker_ids');
-    if (savedFollows) {
-      try {
-        setFollowedSeekerIds(JSON.parse(savedFollows));
-      } catch (e) {
-        setFollowedSeekerIds([]);
-      }
-    }
-  }, []);
 
   useEffect(() => {
     onCreatingChange?.(showCreateModal);
@@ -462,7 +435,7 @@ export default function SeekersView({ onStartChat, onCreatingChange, deductCoins
               <Crown className="text-yellow-400" size={20} />
               <h2 className="font-black text-sm uppercase tracking-widest">Best Seekers Ranking</h2>
             </div>
-            <span className="text-[10px] bg-white/20 px-2 py-1 rounded-full font-bold backdrop-blur-sm">Weekly Ranking</span>
+            <span className="text-[10px] bg-gray-200 px-2 py-1 rounded-full font-bold">Weekly Ranking</span>
           </div>
 
           <div className="space-y-3 relative z-10">
@@ -501,6 +474,25 @@ export default function SeekersView({ onStartChat, onCreatingChange, deductCoins
           </div>
         </motion.div>
       )}
+
+      {/* 🌍 PROMOTIONAL COMMUNITY TEASER 🌍 */}
+      <div 
+        onClick={onPromote}
+        className="bg-blue-600 rounded-3xl p-5 shadow-lg shadow-blue-100 flex items-center justify-between gap-4 cursor-pointer hover:bg-blue-700 transition-all active:scale-[0.98] border border-blue-500 group"
+      >
+        <div className="flex-1 space-y-1">
+          <div className="flex items-center gap-1.5">
+            <span className="text-white text-[10px] font-black uppercase tracking-widest bg-white/20 px-2 py-0.5 rounded">Build Community</span>
+          </div>
+          <h3 className="text-base font-black text-white tracking-tight">Help Friends Find Work 💼</h3>
+          <p className="text-[10px] text-blue-100 font-medium leading-relaxed max-w-[200px]">
+            Refer local experts and get rewarded. Help us build a trusted marketplace.
+          </p>
+        </div>
+        <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-blue-600 shadow-xl group-hover:scale-110 transition-transform">
+          <Share2 size={24} />
+        </div>
+      </div>
 
       {/* Provincial Heroes Leaderboard */}
       {provinceLeaderboard.length > 0 && selectedCategory === 'All' && (
@@ -608,18 +600,25 @@ export default function SeekersView({ onStartChat, onCreatingChange, deductCoins
                 
                 {/* Photo Count tag if more than 1 image */}
                 {seeker.images && seeker.images.length > 1 && (
-                  <div className="absolute bottom-1.5 right-1.5 bg-black/60 backdrop-blur-xs text-[8px] font-bold text-white px-1.5 py-0.5 rounded">
+                  <div className="absolute bottom-1.5 right-1.5 bg-black text-[8px] font-bold text-white px-1.5 py-0.5 rounded">
                     {seeker.images.length}
                   </div>
                 )}
 
                 {/* Service Category Marker top-left of photo */}
-                <span className="absolute top-1.5 left-1.5 text-[8px] font-extrabold uppercase tracking-wide px-1.5 py-0.5 rounded shadow-xs bg-white text-blue-600 border border-slate-100">
-                  {seeker.category}
-                </span>
+                <div className="absolute top-1.5 left-1.5 flex flex-col gap-1">
+                  <span className="text-[8px] font-extrabold uppercase tracking-wide px-1.5 py-0.5 rounded shadow-xs bg-white text-blue-600 border border-slate-100">
+                    {seeker.category}
+                  </span>
+                  {(seeker.likes || 0) > 10 && (
+                    <span className="text-[8px] font-black uppercase tracking-wide px-1.5 py-0.5 rounded shadow-xs bg-amber-400 text-amber-950 border border-amber-300 flex items-center gap-0.5">
+                      <Crown size={8} /> Top 20
+                    </span>
+                  )}
+                </div>
                 
                 {/* Micro Avatar Icon top-right */}
-                <div className="absolute top-1.5 right-1.5 bg-white/90 backdrop-blur-xs p-0.5 rounded-full border border-gray-100 shadow-xs flex items-center">
+                <div className="absolute top-1.5 right-1.5 bg-white p-0.5 rounded-full border border-gray-100 shadow-xs flex items-center">
                   <img 
                     src={seeker.avatar} 
                     alt="avatar" 
@@ -634,7 +633,7 @@ export default function SeekersView({ onStartChat, onCreatingChange, deductCoins
                     e.stopPropagation();
                     handleLike(seeker.id);
                   }}
-                  className={`absolute bottom-1.5 left-1.5 bg-white/90 backdrop-blur-sm px-2 py-0.5 rounded-full border border-gray-100 shadow-sm flex items-center gap-1 transition-all active:scale-95 hover:bg-white`}
+                  className={`absolute bottom-1.5 left-1.5 bg-white px-2 py-0.5 rounded-full border border-gray-100 shadow-sm flex items-center gap-1 transition-all active:scale-95 hover:bg-gray-50`}
                 >
                   <Heart 
                     size={10} 
@@ -643,6 +642,18 @@ export default function SeekersView({ onStartChat, onCreatingChange, deductCoins
                   <span className={`text-[9px] font-black ${likedSeekerIds.includes(seeker.id) ? 'text-red-600' : 'text-gray-800'}`}>
                     {(seeker.likes || 0)}
                   </span>
+                </button>
+
+                {/* Share Button Overlay */}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleShareSeeker(seeker);
+                  }}
+                  className="absolute bottom-1.5 right-1.5 bg-white p-1.5 rounded-full border border-gray-100 shadow-sm flex items-center justify-center transition-all active:scale-95 hover:bg-gray-50 text-indigo-600"
+                  title="Share service"
+                >
+                  <Share2 size={10} />
                 </button>
               </div>
 
@@ -1011,7 +1022,7 @@ export default function SeekersView({ onStartChat, onCreatingChange, deductCoins
         {selectedSeekerForDetails && (
           <div className="fixed inset-0 z-45 bg-gray-50 flex flex-col max-w-md mx-auto shadow-2xl overflow-hidden animate-in fade-in slide-in-from-bottom duration-250 text-left">
             {/* Header Sticky Navigation Bar */}
-            <div className="sticky top-0 bg-white/95 backdrop-blur-md px-4 py-3.5 border-b border-gray-100 flex items-center justify-between z-10 shrink-0">
+            <div className="sticky top-0 bg-white px-4 py-3.5 border-b border-gray-100 flex items-center justify-between z-10 shrink-0">
               <button
                 type="button"
                 onClick={() => setSelectedSeekerForDetails(null)}
@@ -1025,6 +1036,22 @@ export default function SeekersView({ onStartChat, onCreatingChange, deductCoins
                 <p className="text-xs font-black text-gray-800 truncate max-w-[120px]">{selectedSeekerForDetails.name}'s Service</p>
               </div>
               <div className="flex items-center gap-1.5 relative">
+                <motion.button
+                  whileTap={{ scale: 0.9 }}
+                  onClick={() => onAddFriend(selectedSeekerForDetails)}
+                  className="bg-gray-50 text-gray-600 hover:bg-gray-100 p-1.5 rounded-lg border border-gray-200 transition flex items-center gap-1"
+                  title="Add Friend"
+                >
+                  <UserPlus size={16} />
+                </motion.button>
+                <button
+                  type="button"
+                  onClick={() => handleShareSeeker(selectedSeekerForDetails)}
+                  className="bg-indigo-50 text-indigo-600 hover:bg-indigo-100 p-1.5 rounded-lg border border-indigo-100 transition flex items-center justify-center w-8 h-8 rounded-lg"
+                  title="Share Service"
+                >
+                  <Share2 size={16} />
+                </button>
                 <button
                   type="button"
                   onClick={() => {
@@ -1104,7 +1131,7 @@ export default function SeekersView({ onStartChat, onCreatingChange, deductCoins
                           prev === 0 ? selectedSeekerForDetails.images.length - 1 : prev - 1
                         );
                       }}
-                      className="absolute left-3 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 text-white rounded-full p-2 backdrop-blur-xs transition active:scale-90 z-20"
+                      className="absolute left-3 top-1/2 -translate-y-1/2 bg-black text-white rounded-full p-2 transition active:scale-90 z-20"
                     >
                       <ChevronLeft size={18} />
                     </button>
@@ -1116,7 +1143,7 @@ export default function SeekersView({ onStartChat, onCreatingChange, deductCoins
                           prev === selectedSeekerForDetails.images.length - 1 ? 0 : prev + 1
                         );
                       }}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 text-white rounded-full p-2 backdrop-blur-xs transition active:scale-90 z-20"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 bg-black text-white rounded-full p-2 transition active:scale-90 z-20"
                     >
                       <ChevronRight size={18} />
                     </button>
@@ -1124,14 +1151,14 @@ export default function SeekersView({ onStartChat, onCreatingChange, deductCoins
                 )}
 
                 {/* Tap to zoom tip helper */}
-                <div className="absolute bottom-3 left-3 bg-black/60 backdrop-blur-xs px-2.5 py-1 rounded-full text-[9px] font-bold text-white flex items-center gap-1 select-none z-10">
+                <div className="absolute bottom-3 left-3 bg-black px-2.5 py-1 rounded-full text-[9px] font-bold text-white flex items-center gap-1 select-none z-10">
                   <Maximize2 size={10} />
                   <span>Tap to view full screen</span>
                 </div>
 
                 {/* Dot markers at the bottom center of the banner */}
                 {selectedSeekerForDetails.images.length > 1 && (
-                  <div className="absolute bottom-3 right-3 bg-black/50 backdrop-blur-xs px-2.5 py-1 rounded-full flex gap-1 items-center z-10">
+                  <div className="absolute bottom-3 right-3 bg-black px-2.5 py-1 rounded-full flex gap-1 items-center z-10">
                     {selectedSeekerForDetails.images.map((_, idx) => (
                       <span
                         key={idx}
@@ -1248,7 +1275,7 @@ export default function SeekersView({ onStartChat, onCreatingChange, deductCoins
             </div>
 
             {/* Sticky Bottom Hire Bar */}
-            <div className="sticky bottom-0 inset-x-0 p-4 bg-white/95 backdrop-blur-md border-t border-gray-100 flex items-center justify-between gap-4 z-10 shrink-0 shadow-lg">
+            <div className="sticky bottom-0 inset-x-0 p-4 bg-white border-t border-gray-100 flex items-center justify-between gap-4 z-10 shrink-0 shadow-lg">
               <div className="text-left">
                 <p className="text-[9px] uppercase font-mono font-bold text-gray-400">Proposed Budget</p>
                 <p className="text-sm font-black text-green-700">{selectedSeekerForDetails.budget}</p>
@@ -1378,7 +1405,7 @@ export default function SeekersView({ onStartChat, onCreatingChange, deductCoins
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[160] bg-black/45 backdrop-blur-xs flex items-center justify-center p-4 text-slate-800"
+            className="fixed inset-0 z-[160] bg-gray-950 flex items-center justify-center p-4 text-slate-800"
           >
             <motion.div 
               initial={{ scale: 0.95, y: 20 }}
@@ -1458,7 +1485,7 @@ export default function SeekersView({ onStartChat, onCreatingChange, deductCoins
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[160] bg-black/45 backdrop-blur-xs flex items-center justify-center p-4 text-slate-800"
+            className="fixed inset-0 z-[160] bg-gray-950 flex items-center justify-center p-4 text-slate-800"
           >
             <motion.div 
               initial={{ scale: 0.95, y: 20 }}
