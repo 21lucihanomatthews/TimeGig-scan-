@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
+import TimeGigLogo from "./TimeGigLogo";
 import { 
   Search, 
   Plus, 
@@ -13,7 +14,9 @@ import {
   ShieldCheck,
   CheckCircle2,
   Trash2,
-  MessageSquare
+  MessageSquare,
+  MoreVertical,
+  AlertTriangle
 } from "lucide-react";
 
 export interface MarketItem {
@@ -28,63 +31,18 @@ export interface MarketItem {
   isUserCreated?: boolean;
 }
 
-const INITIAL_MARKET_DATA: MarketItem[] = [
-  {
-    id: 1,
-    title: "Mountain Bike - Excellent Condition",
-    price: "R3,500",
-    location: "Sandton",
-    category: "Sports",
-    images: [
-      "https://images.unsplash.com/photo-1532298229144-0ec0c57515c7?w=600&h=600&fit=crop",
-      "https://images.unsplash.com/photo-1485965120184-e220f721d03e?w=600&h=600&fit=crop"
-    ],
-    seller: "James W.",
-    description: "Well maintained mountain bike. Selling due to upgrade."
-  },
-  {
-    id: 2,
-    title: "iPhone 13 128GB Blue",
-    price: "R12,000",
-    location: "Cape Town",
-    category: "Electronics",
-    images: [
-      "https://images.unsplash.com/photo-1633332755192-727a05c4013d?w=600&h=600&fit=crop",
-      "https://images.unsplash.com/photo-1510557880182-3d4d3cba3f21?w=600&h=600&fit=crop"
-    ],
-    seller: "Sarah M.",
-    description: "Blue iPhone 13, 128GB. No scratches, comes with box."
-  },
-  {
-    id: 3,
-    title: "Used Wooden Dining Table",
-    price: "R1,800",
-    location: "Pretoria",
-    category: "Furniture",
-    images: ["https://images.unsplash.com/photo-1544457070-4cd773b4d71e?w=600&h=600&fit=crop"],
-    seller: "Hendrik P.",
-    description: "Solid wood dining table. Seats 6."
-  },
-  {
-    id: 4,
-    title: "MacBook Air M1",
-    price: "R14,500",
-    location: "Durban",
-    category: "Electronics",
-    images: ["https://images.unsplash.com/photo-1611186871348-b1ce696e52c9?w=600&h=600&fit=crop"],
-    seller: "Nomsa D.",
-    description: "M1 MacBook Air. 8GB RAM, 256GB SSD. Battery health 95%."
-  }
-];
+const INITIAL_MARKET_DATA: MarketItem[] = [];
 
 const CATEGORIES = ["All", "Electronics", "Furniture", "Vehicles", "Clothing", "Sports", "Other"];
 
 interface MarketViewProps {
   onInterested?: (seller: string) => void;
   onCreatingChange?: (isCreating: boolean) => void;
+  deductCoins: (amount: number) => boolean;
+  isVerified?: boolean;
 }
 
-export default function MarketView({ onInterested, onCreatingChange }: MarketViewProps) {
+export default function MarketView({ onInterested, onCreatingChange, deductCoins, isVerified }: MarketViewProps) {
   const [items, setItems] = useState<MarketItem[]>(INITIAL_MARKET_DATA);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
@@ -98,6 +56,37 @@ export default function MarketView({ onInterested, onCreatingChange }: MarketVie
   const [selectedItem, setSelectedItem] = useState<MarketItem | null>(null);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
 
+  const [showItemMenu, setShowItemMenu] = useState(false);
+  const [showReportItemModal, setShowReportItemModal] = useState(false);
+  const [showBlockItemConfirm, setShowBlockItemConfirm] = useState(false);
+  const [reportedItemIds, setReportedItemIds] = useState<number[]>([]);
+  const [blockedMerchantNames, setBlockedMerchantNames] = useState<string[]>([]);
+  const [reportReason, setReportReason] = useState('scam');
+  const [reportDescription, setReportDescription] = useState('');
+  const [marketToast, setMarketToast] = useState<string | null>(null);
+
+  const triggerMarketToast = (msg: string) => {
+    setMarketToast(msg);
+    setTimeout(() => setMarketToast(null), 4000);
+  };
+
+  const handleReportItemSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (selectedItem) {
+      setReportedItemIds(prev => [...prev, selectedItem.id]);
+    }
+    setShowReportItemModal(false);
+    triggerMarketToast(`🛡️ Reported successfully. We've archived this page and marked it for dynamic verification by safety operators.`);
+  };
+
+  const handleBlockMerchantSubmit = () => {
+    if (selectedItem) {
+      setBlockedMerchantNames(prev => [...prev, selectedItem.seller]);
+    }
+    setShowBlockItemConfirm(false);
+    triggerMarketToast(`🚫 Provider blocked. Their listings have been hidden and communications muted.`);
+  };
+
   // Create Item Form State
   const [newTitle, setNewTitle] = useState("");
   const [newPrice, setNewPrice] = useState("");
@@ -108,6 +97,9 @@ export default function MarketView({ onInterested, onCreatingChange }: MarketVie
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   const filteredItems = items.filter(item => {
+    const isBlocked = blockedMerchantNames.includes(item.seller);
+    if (isBlocked) return false;
+
     const matchesSearch = item.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
                          item.description.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = selectedCategory === "All" || item.category === selectedCategory;
@@ -128,6 +120,9 @@ export default function MarketView({ onInterested, onCreatingChange }: MarketVie
 
   const handleCreateItem = (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!deductCoins(2)) return;
+
     const newItem: MarketItem = {
       id: Date.now(),
       title: newTitle,
@@ -169,10 +164,11 @@ export default function MarketView({ onInterested, onCreatingChange }: MarketVie
     <div className="max-w-md mx-auto space-y-6 pb-24 text-left p-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 tracking-tight flex items-center gap-2">
-            <ShoppingBag className="text-indigo-600" size={24} /> Market
-          </h1>
-          <p className="text-xs text-gray-400 font-medium">Buy and sell safely in your community</p>
+          <div className="flex items-center gap-2">
+            <TimeGigLogo size="small" darkTheme={false} />
+            <span className="bg-indigo-50 text-indigo-600 border border-indigo-100 font-black text-[9px] uppercase tracking-wider px-2 py-0.5 rounded-full select-none">Market</span>
+          </div>
+          <p className="text-xs text-gray-400 font-medium mt-1">Buy and sell safely in your community</p>
         </div>
         <motion.button
           whileTap={{ scale: 0.95 }}
@@ -254,15 +250,56 @@ export default function MarketView({ onInterested, onCreatingChange }: MarketVie
               exit={{ y: "100%" }}
               className="bg-white w-full max-w-md rounded-t-[32px] sm:rounded-[32px] overflow-hidden flex flex-col max-h-[90vh] relative"
             >
-              <button 
-                onClick={() => {
-                  setSelectedItem(null);
-                  setActiveImageIndex(0);
-                }}
-                className="absolute top-4 right-4 z-10 bg-black/20 hover:bg-black/40 text-white p-2 rounded-full backdrop-blur-md transition-all"
-              >
-                <X size={20} />
-              </button>
+              <div className="absolute top-4 right-4 z-20 flex items-center gap-2">
+                <button 
+                  onClick={() => setShowItemMenu(!showItemMenu)}
+                  className="bg-black/20 hover:bg-black/40 text-white p-2 rounded-full backdrop-blur-md transition-all"
+                  title="Safety Settings"
+                >
+                  <MoreVertical size={20} />
+                </button>
+                <button 
+                  onClick={() => {
+                    setSelectedItem(null);
+                    setActiveImageIndex(0);
+                  }}
+                  className="bg-black/20 hover:bg-black/40 text-white p-2 rounded-full backdrop-blur-md transition-all"
+                >
+                  <X size={20} />
+                </button>
+
+                <AnimatePresence>
+                  {showItemMenu && (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.95, y: -10 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.95, y: -10 }}
+                      className="absolute top-11 right-0 bg-white border border-gray-100 rounded-2xl shadow-xl p-1.5 z-30 w-44 text-left font-sans text-slate-800"
+                    >
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowReportItemModal(true);
+                          setShowItemMenu(false);
+                        }}
+                        className="flex items-center gap-2 text-red-650 hover:bg-red-50 font-extrabold text-[11px] w-full text-left px-3 py-2 rounded-xl transition"
+                      >
+                        Report Listing
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowBlockItemConfirm(true);
+                          setShowItemMenu(false);
+                        }}
+                        className="flex items-center gap-2 text-gray-750 hover:bg-gray-50 font-bold text-[11px] w-full text-left px-3 py-2 rounded-xl transition"
+                      >
+                        Block Merchant
+                      </button>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
 
               <div className="aspect-square w-full overflow-hidden bg-gray-100 relative">
                 <AnimatePresence mode="wait">
@@ -558,6 +595,147 @@ export default function MarketView({ onInterested, onCreatingChange }: MarketVie
                   Create Listing
                 </button>
               </form>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Items safety alerts */}
+      <AnimatePresence>
+        {marketToast && (
+          <motion.div
+            initial={{ opacity: 0, y: -50 }}
+            animate={{ opacity: 1, y: 16 }}
+            exit={{ opacity: 0, y: -50 }}
+            className="fixed top-4 left-4 right-4 z-[200] bg-slate-900 text-white text-xs font-semibold p-4 rounded-2xl shadow-xl flex items-start gap-3 border border-slate-750"
+          >
+            <ShieldCheck className="text-green-400 shrink-0 mt-0.5" size={18} />
+            <div>
+              <p className="font-extrabold tracking-tight">Security System Response</p>
+              <p className="opacity-90 leading-relaxed mt-0.5">{marketToast}</p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Safety Report Modal Popup for items */}
+      <AnimatePresence>
+        {showReportItemModal && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[160] bg-black/45 backdrop-blur-xs flex items-center justify-center p-4 text-slate-800"
+          >
+            <motion.div 
+              initial={{ scale: 0.95, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.95, y: 20 }}
+              className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl relative text-left"
+            >
+              <button 
+                type="button"
+                onClick={() => setShowReportItemModal(false)}
+                className="absolute top-4 right-4 text-gray-400 hover:text-gray-650 animate-pulse"
+              >
+                <X size={20} />
+              </button>
+
+              <div className="flex items-center gap-2 mb-4">
+                <AlertTriangle className="text-red-500" size={24} />
+                <h3 className="text-lg font-black text-gray-900">Safety Complaint Form</h3>
+              </div>
+
+              <p className="text-gray-600 text-xs mb-4 leading-relaxed">
+                We maintain active security controls to prevent scams, phishing, harassment, and explicit content. Please declare your complaint:
+              </p>
+
+              <form onSubmit={handleReportItemSubmit} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-extrabold text-gray-700 uppercase tracking-wider mb-2">Primary Reason</label>
+                  <select 
+                    value={reportReason}
+                    onChange={(e) => setReportReason(e.target.value)}
+                    className="w-full bg-gray-50 border border-gray-150 rounded-xl px-3 py-2.5 text-xs font-bold text-gray-800 focus:outline-none focus:ring-2 focus:ring-red-500/10"
+                  >
+                    <option value="scam">Scam / Phishing / Fraud</option>
+                    <option value="explicit">Explicit/Nude/Inappropriate behavior</option>
+                    <option value="harassment">Abusive Content & Harassment</option>
+                    <option value="underage">Underage User Activity</option>
+                    <option value="off_platform">Requests payments off-platform</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-extrabold text-gray-700 uppercase tracking-wider mb-2">Context or Details</label>
+                  <textarea
+                    required
+                    value={reportDescription}
+                    onChange={(e) => setReportDescription(e.target.value)}
+                    placeholder="Provide incident details (contracts outside app, suspcious listing)..."
+                    className="w-full bg-gray-50 border border-gray-100 rounded-xl px-3 py-2.5 text-xs text-gray-750 min-h-[80px]"
+                  />
+                </div>
+
+                <div className="flex gap-2.5 justify-end pt-2">
+                  <button 
+                    type="button"
+                    onClick={() => setShowReportItemModal(false)}
+                    className="px-4 py-2.5 rounded-xl border border-gray-150 text-xs font-bold text-gray-500 hover:bg-gray-50"
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    type="submit"
+                    className="px-4 py-2.5 rounded-xl bg-indigo-650 hover:bg-indigo-700 text-white text-xs font-extrabold shadow-md transition"
+                  >
+                    Submit Report
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Block Confirmation Modal for items */}
+      <AnimatePresence>
+        {showBlockItemConfirm && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[160] bg-black/45 backdrop-blur-xs flex items-center justify-center p-4 text-slate-800"
+          >
+            <motion.div 
+              initial={{ scale: 0.95, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.95, y: 20 }}
+              className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl text-center"
+            >
+              <div className="mx-auto w-12 h-12 rounded-full bg-red-50 text-red-600 flex items-center justify-center mb-4">
+                <AlertTriangle size={24} />
+              </div>
+              <h3 className="text-base font-black text-gray-900 mb-2">Block Merchant?</h3>
+              <p className="text-gray-600 text-xs mb-6 leading-relaxed">
+                Are you sure you want to block this user? They will be muted, and their listings will no longer be visible to you.
+              </p>
+              <div className="flex gap-2.5 justify-center">
+                <button 
+                  type="button"
+                  onClick={() => setShowBlockItemConfirm(false)}
+                  className="px-4 py-2.5 rounded-xl border border-gray-100 text-xs font-bold text-gray-500 hover:bg-gray-50 transition w-28"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="button"
+                  onClick={handleBlockMerchantSubmit}
+                  className="px-4 py-2.5 rounded-xl bg-red-650 hover:bg-red-700 text-white text-xs font-extrabold shadow-md transition w-28"
+                >
+                  Yes, Block
+                </button>
+              </div>
             </motion.div>
           </motion.div>
         )}

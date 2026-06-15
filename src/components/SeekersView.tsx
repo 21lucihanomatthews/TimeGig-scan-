@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+import TimeGigLogo from './TimeGigLogo';
 import { 
   Search, 
   MapPin, 
@@ -18,7 +19,10 @@ import {
   Trash2,
   Trophy,
   Crown,
-  Heart
+  Heart,
+  MoreVertical,
+  ShieldCheck,
+  AlertTriangle
 } from 'lucide-react';
 
 export const formatPriceForMarketplace = (priceStr: string) => {
@@ -63,171 +67,18 @@ const provinces = [
   'Northern Cape'
 ];
 
-const initialSeekers: Seeker[] = [
-  {
-    id: 1,
-    name: 'Sipho M.',
-    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=sipho',
-    title: 'Professional A/V & Event Setup',
-    description: 'Offering high-quality setup for sound, staging, lights, and power rigs. Ideal for corporate events, weddings, and local celebrations. Standard rate includes essential equipment and quick setup.',
-    budget: 'R150/hr',
-    location: 'Sunninghill, JHB',
-    province: 'Gauteng',
-    category: 'Labor',
-    skillsNeeded: ['Sound Engineering', 'Stage Lighting', 'Heavy Lifting'],
-    images: ['https://images.unsplash.com/photo-1511578314328-91216d802117?w=300&q=80'],
-    likes: 42
-  },
-  {
-    id: 2,
-    name: 'Lerato K.',
-    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=lerato',
-    title: 'Social Media Strategy & Canva Creator',
-    description: 'Offering custom 30-day Instagram/Facebook content grids, eye-catching baking and aesthetic graphics, reels templates, and strategic post schedules to help local businesses grow their presence.',
-    budget: 'R1,200/flat',
-    location: 'Soweto, JHB',
-    province: 'Gauteng',
-    category: 'Creative',
-    skillsNeeded: ['Canva Graphics', 'Social Media Copywriting', 'Reels Editing'],
-    images: ['https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?w=300&q=80'],
-    likes: 89
-  },
-  {
-    id: 3,
-    name: 'Arthur P.',
-    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=arthur',
-    title: 'Precision Handyman & Furniture Assembly',
-    description: 'Offering reliable, clean assembly for Kallax shelves, Pax wardrobes, custom desks, and general wall mounting/drilling services. All professional hand and power tools provided.',
-    budget: 'R180/hr',
-    location: 'Green Point, CPT',
-    province: 'Western Cape',
-    category: 'Labor',
-    skillsNeeded: ['Furniture assembly', 'Drilling & Mounting', 'Plumbing Basics'],
-    images: ['https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=300&q=80'],
-    likes: 56
-  },
-  {
-    id: 4,
-    name: 'Dr. Sarah K.',
-    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=sarah',
-    title: 'Conversational French Language Tutor',
-    description: 'Offering immersive conversational French tutoring and business translation. Tailored lesson plans for adults, high-school students, and companies looking to expand into Francophone markets.',
-    budget: 'R220/hr',
-    location: 'Hatfield, PTA',
-    province: 'Gauteng',
-    category: 'Education',
-    skillsNeeded: ['Conversational French', 'Private Tutoring', 'Business Translation'],
-    images: ['https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=300&q=80'],
-    likes: 31
-  },
-  {
-    id: 5,
-    name: 'Jenny Cooke',
-    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=jenny',
-    title: 'Pet Care & Puppy Coaching Expert',
-    description: 'Providing comprehensive puppy socialization, friendly day-sitting on Durban afternoons, confidence coaching, leash-walk training, and loving house-sitting services. Highly experienced.',
-    budget: 'R120/hr',
-    location: 'Umhlanga, DBN',
-    province: 'KwaZulu-Natal',
-    category: 'Care',
-    skillsNeeded: ['Puppy Coaching', 'Dog Walking', 'Loving Patience'],
-    images: ['https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=300&q=80'],
-    likes: 74
-  },
-  {
-    id: 6,
-    name: 'Thabo N.',
-    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=thabo',
-    title: 'General Maintenance & Painting',
-    description: 'Reliable painting and general home maintenance services. Quality work guaranteed.',
-    budget: 'R100/hr',
-    location: 'Gqeberha',
-    province: 'Eastern Cape',
-    category: 'Labor',
-    skillsNeeded: ['Painting', 'Repair', 'General Labor'],
-    images: ['https://images.unsplash.com/photo-1589939705384-5185137a7f0f?w=300&q=80'],
-    likes: 25
-  },
-  {
-    id: 7,
-    name: 'Zanele M.',
-    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=zanele',
-    title: 'Academic Support & Reading Coach',
-    description: 'Helping children develop strong reading and writing skills through personalized coaching.',
-    budget: 'R150/hr',
-    location: 'Bloemfontein',
-    province: 'Free State',
-    category: 'Education',
-    skillsNeeded: ['Child Tutoring', 'Reading Coach', 'Literature'],
-    images: ['https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=300&q=80'],
-    likes: 38
-  },
-  {
-    id: 8,
-    name: 'Khotso R.',
-    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=khotso',
-    title: 'Solar Panel Installation Specialist',
-    description: 'Professional solar energy solutions for your home or small business. Off-grid systems expert.',
-    budget: 'R500/hr',
-    location: 'Polokwane',
-    province: 'Limpopo',
-    category: 'Labor',
-    skillsNeeded: ['Solar Energy', 'Electrical', 'Installation'],
-    images: ['https://images.unsplash.com/photo-1508514177221-188b1cf16e9d?w=300&q=80'],
-    likes: 62
-  },
-  {
-    id: 9,
-    name: 'Nomsa S.',
-    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=nomsa',
-    title: 'Professional Cleaning & Organization',
-    description: 'Keep your workplace or home pristine with meticulous deep-cleaning and decluttering services.',
-    budget: 'R80/hr',
-    location: 'Nelspruit',
-    province: 'Mpumalanga',
-    category: 'Labor',
-    skillsNeeded: ['Deep Cleaning', 'Organization', 'Punctuality'],
-    images: ['https://images.unsplash.com/photo-1581578731548-c64695ce6958?w=300&q=80'],
-    likes: 45
-  },
-  {
-    id: 10,
-    name: 'Pieter v. d. Merwe',
-    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=pieter',
-    title: 'Livestock Care & Farm Management',
-    description: 'Offering experienced help with cattle, sheep, and general farm operations. Temporary relief work available.',
-    budget: 'R300/day',
-    location: 'Rustenburg',
-    province: 'North West',
-    category: 'Labor',
-    skillsNeeded: ['Animal Husbandry', 'Farming', 'Operation'],
-    images: ['https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=300&q=80'],
-    likes: 51
-  },
-  {
-    id: 11,
-    name: 'Johan S.',
-    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=johan',
-    title: 'Stargazing Guide & Desert Tours',
-    description: 'Expert-led night sky tours and unique desert experiences in the Northern Cape.',
-    budget: 'R400/tour',
-    location: 'Upington',
-    province: 'Northern Cape',
-    category: 'Creative',
-    skillsNeeded: ['Astronomy', 'Tour Guiding', 'Storytelling'],
-    images: ['https://images.unsplash.com/photo-1532974297617-c0f05fe48bff?w=300&q=80'],
-    likes: 67
-  }
-];
+const initialSeekers: Seeker[] = [];
 
 const categories = ['All', 'Labor', 'Creative', 'Education', 'Care'];
 
 interface SeekersViewProps {
   onStartChat: (seekerName: string, messageText: string, seekerAvatar: string) => void;
   onCreatingChange?: (isCreating: boolean) => void;
+  deductCoins: (amount: number) => boolean;
+  isVerified?: boolean;
 }
 
-export default function SeekersView({ onStartChat, onCreatingChange }: SeekersViewProps) {
+export default function SeekersView({ onStartChat, onCreatingChange, deductCoins, isVerified }: SeekersViewProps) {
   const [seekers, setSeekers] = useState<Seeker[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
@@ -261,6 +112,37 @@ export default function SeekersView({ onStartChat, onCreatingChange }: SeekersVi
   const [selectedSeekerForDetails, setSelectedSeekerForDetails] = useState<Seeker | null>(null);
   const [currentDetailsImageIndex, setCurrentDetailsImageIndex] = useState(0);
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
+
+  const [showSeekerMenu, setShowSeekerMenu] = useState(false);
+  const [showReportSeekerModal, setShowReportSeekerModal] = useState(false);
+  const [showBlockSeekerConfirm, setShowBlockSeekerConfirm] = useState(false);
+  const [reportedSeekerIds, setReportedSeekerIds] = useState<number[]>([]);
+  const [blockedSeekerNames, setBlockedSeekerNames] = useState<string[]>([]);
+  const [reportReason, setReportReason] = useState('scam');
+  const [reportDescription, setReportDescription] = useState('');
+  const [seekerToast, setSeekerToast] = useState<string | null>(null);
+
+  const triggerSeekerToast = (msg: string) => {
+    setSeekerToast(msg);
+    setTimeout(() => setSeekerToast(null), 4000);
+  };
+
+  const handleReportSeekerSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (selectedSeekerForDetails) {
+      setReportedSeekerIds(prev => [...prev, selectedSeekerForDetails.id]);
+    }
+    setShowReportSeekerModal(false);
+    triggerSeekerToast(`🛡️ Reported successfully. We've compiled detailed activity logs and will analyze explicit content / scam details to ensure community safety.`);
+  };
+
+  const handleBlockSeekerSubmit = () => {
+    if (selectedSeekerForDetails) {
+      setBlockedSeekerNames(prev => [...prev, selectedSeekerForDetails.name]);
+    }
+    setShowBlockSeekerConfirm(false);
+    triggerSeekerToast(`🚫 Blocked successfully! You will no longer view listings or receive contact from this provider.`);
+  };
 
   const handleMultipleFilesUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     setImageError('');
@@ -306,23 +188,41 @@ export default function SeekersView({ onStartChat, onCreatingChange }: SeekersVi
   };
 
   useEffect(() => {
-    const saved = localStorage.getItem('seekers_list_v2');
+    // Reset old mock data
+    localStorage.removeItem('seekers_list_v2');
+    localStorage.removeItem('user_liked_seeker_ids');
+    localStorage.removeItem('user_followed_seeker_ids');
+    
+    const saved = localStorage.getItem('seekers_list_v3');
+    let loadedSeekers: Seeker[] = [];
     if (saved) {
       try {
-        const parsed = JSON.parse(saved);
-        // Ensure all seekers have a valid numeric 'likes' field to prevent NaN errors
-        const migrated = parsed.map((s: any) => ({
-          ...s,
-          likes: typeof s.likes === 'number' && !isNaN(s.likes) ? s.likes : 0
-        }));
-        setSeekers(migrated);
+        loadedSeekers = JSON.parse(saved);
       } catch (e) {
-        setSeekers(initialSeekers);
+        loadedSeekers = [...initialSeekers];
       }
     } else {
-      setSeekers(initialSeekers);
-      localStorage.setItem('seekers_list_v2', JSON.stringify(initialSeekers));
+      loadedSeekers = [...initialSeekers];
     }
+
+    // Always ensure all initialSeekers exist inside our loaded collection
+    initialSeekers.forEach((mockS) => {
+      const exists = loadedSeekers.some((s: any) => s.id === mockS.id);
+      if (!exists) {
+        loadedSeekers.push(mockS);
+      }
+    });
+
+    // Ensure all seekers have a valid numeric 'likes' field, and filter out all mock seekers
+    const migrated = loadedSeekers
+      .filter((s: any) => s.isUserCreated === true)
+      .map((s: any) => ({
+        ...s,
+        likes: typeof s.likes === 'number' && !isNaN(s.likes) ? s.likes : (s.likes || 0)
+      }));
+
+    setSeekers(migrated);
+    localStorage.setItem('seekers_list_v3', JSON.stringify(migrated));
 
     const savedLikes = localStorage.getItem('user_liked_seeker_ids');
     if (savedLikes) {
@@ -373,6 +273,7 @@ export default function SeekersView({ onStartChat, onCreatingChange }: SeekersVi
 
   const handleCreateService = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!deductCoins(2)) return;
     const cleanSkills = newSkillsStr
       .split(',')
       .map(s => s.trim())
@@ -418,7 +319,7 @@ export default function SeekersView({ onStartChat, onCreatingChange }: SeekersVi
 
     const nextSeekers = [created, ...seekers];
     setSeekers(nextSeekers);
-    localStorage.setItem('seekers_list_v2', JSON.stringify(nextSeekers));
+    localStorage.setItem('seekers_list_v3', JSON.stringify(nextSeekers));
 
     // Reset fields
     setNewTitle('');
@@ -437,6 +338,9 @@ export default function SeekersView({ onStartChat, onCreatingChange }: SeekersVi
   };
 
   const filteredSeekers = seekers.filter(seeker => {
+    const isBlocked = blockedSeekerNames.includes(seeker.name);
+    if (isBlocked) return false;
+
     const matchesSearch = 
       seeker.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       seeker.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -474,7 +378,7 @@ export default function SeekersView({ onStartChat, onCreatingChange }: SeekersVi
     }
     
     setLikedSeekerIds(newLikedIds);
-    localStorage.setItem('user_liked_seeker_ids', JSON.stringify(newLikedIds));
+    localStorage.setItem('user_liked_seeker_ids_v2', JSON.stringify(newLikedIds));
 
     const nextSeekers = seekers.map(s => {
       if (s.id === id) {
@@ -500,13 +404,13 @@ export default function SeekersView({ onStartChat, onCreatingChange }: SeekersVi
     }
 
     setFollowedSeekerIds(newFollowedIds);
-    localStorage.setItem('user_followed_seeker_ids', JSON.stringify(newFollowedIds));
+    localStorage.setItem('user_followed_seeker_ids_v2', JSON.stringify(newFollowedIds));
   };
 
   const handleDeleteSeeker = (id: string | number) => {
     const nextSeekers = seekers.filter(s => s.id !== id);
     setSeekers(nextSeekers);
-    localStorage.setItem('seekers_list_v2', JSON.stringify(nextSeekers));
+    localStorage.setItem('seekers_list_v3', JSON.stringify(nextSeekers));
     setSelectedSeekerForDetails(null);
   };
 
@@ -522,14 +426,17 @@ export default function SeekersView({ onStartChat, onCreatingChange }: SeekersVi
   }).filter(item => item.seeker !== null);
 
   return (
-    <div className="p-4 max-w-md mx-auto space-y-6 pb-24 text-left">
+    <div 
+      className="p-4 max-w-md mx-auto space-y-6 pb-24 text-left"
+    >
       {/* Header section */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 tracking-tight flex items-center gap-2">
-            <Sparkles className="text-blue-600 animate-pulse" size={24} /> Service Seekers
-          </h1>
-          <p className="text-xs text-gray-400 font-medium">Local experts hiring their services to users & businesses in need</p>
+          <div className="flex items-center gap-2">
+            <TimeGigLogo size="small" darkTheme={false} />
+            <span className="bg-blue-50 text-blue-600 border border-blue-100 font-black text-[9px] uppercase tracking-wider px-2 py-0.5 rounded-full select-none">Seekers</span>
+          </div>
+          <p className="text-xs text-gray-400 font-medium mt-1">Local experts hiring their services to users & businesses in need</p>
         </div>
         <button 
           onClick={() => setShowCreateModal(true)}
@@ -1115,18 +1022,59 @@ export default function SeekersView({ onStartChat, onCreatingChange }: SeekersVi
               </button>
               <div className="text-center">
                 <p className="text-[9px] uppercase tracking-wider font-mono font-bold text-blue-600">Service Profile</p>
-                <p className="text-xs font-black text-gray-800 truncate max-w-[150px]">{selectedSeekerForDetails.name}'s Service</p>
+                <p className="text-xs font-black text-gray-800 truncate max-w-[120px]">{selectedSeekerForDetails.name}'s Service</p>
               </div>
-              <button
-                type="button"
-                onClick={() => {
-                  handleOpenPitch(selectedSeekerForDetails);
-                  setSelectedSeekerForDetails(null);
-                }}
-                className="bg-blue-50 text-blue-600 font-extrabold text-[10px] uppercase tracking-wider px-2.5 py-1.5 rounded-lg border border-blue-100 hover:bg-blue-100 transition"
-              >
-                Chat
-              </button>
+              <div className="flex items-center gap-1.5 relative">
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleOpenPitch(selectedSeekerForDetails);
+                    setSelectedSeekerForDetails(null);
+                  }}
+                  className="bg-blue-50 text-blue-600 font-extrabold text-[10px] uppercase tracking-wider px-2.5 py-1.5 rounded-lg border border-blue-100 hover:bg-blue-100 transition"
+                >
+                  Chat
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowSeekerMenu(!showSeekerMenu)}
+                  className="p-1.5 text-gray-500 hover:bg-gray-100 rounded-lg transition"
+                >
+                  <MoreVertical size={18} />
+                </button>
+
+                <AnimatePresence>
+                  {showSeekerMenu && (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.95, y: -10 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.95, y: -10 }}
+                      className="absolute top-10 right-0 bg-white border border-gray-100 rounded-2xl shadow-xl p-1.5 z-20 w-40 text-left"
+                    >
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowReportSeekerModal(true);
+                          setShowSeekerMenu(false);
+                        }}
+                        className="flex items-center gap-2 text-red-650 hover:bg-red-50 font-extrabold text-[10px] w-full text-left px-2.5 py-2 rounded-lg"
+                      >
+                        Report Seeker / Gig
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowBlockSeekerConfirm(true);
+                          setShowSeekerMenu(false);
+                        }}
+                        className="flex items-center gap-2 text-gray-650 hover:bg-gray-50 font-bold text-[10px] w-full text-left px-2.5 py-2 rounded-lg"
+                      >
+                        Block Seeker
+                      </button>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
             </div>
 
             {/* Scrollable Content Container */}
@@ -1404,6 +1352,148 @@ export default function SeekersView({ onStartChat, onCreatingChange }: SeekersVi
           </div>
         )}
       </AnimatePresence>
+
+      {/* Seeker safety alerts */}
+      <AnimatePresence>
+        {seekerToast && (
+          <motion.div
+            initial={{ opacity: 0, y: -50 }}
+            animate={{ opacity: 1, y: 16 }}
+            exit={{ opacity: 0, y: -50 }}
+            className="fixed top-4 left-4 right-4 z-[200] bg-slate-900 text-white text-xs font-semibold p-4 rounded-2xl shadow-xl flex items-start gap-3 border border-slate-750"
+          >
+            <ShieldCheck className="text-green-400 shrink-0 mt-0.5" size={18} />
+            <div>
+              <p className="font-extrabold tracking-tight">Security System Response</p>
+              <p className="opacity-90 leading-relaxed mt-0.5">{seekerToast}</p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Safety Report Modal Popup for seekers */}
+      <AnimatePresence>
+        {showReportSeekerModal && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[160] bg-black/45 backdrop-blur-xs flex items-center justify-center p-4 text-slate-800"
+          >
+            <motion.div 
+              initial={{ scale: 0.95, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.95, y: 20 }}
+              className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl relative text-left"
+            >
+              <button 
+                type="button"
+                onClick={() => setShowReportSeekerModal(false)}
+                className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
+              >
+                <X size={20} />
+              </button>
+
+              <div className="flex items-center gap-2 mb-4">
+                <AlertTriangle className="text-red-500" size={24} />
+                <h3 className="text-lg font-black text-gray-900">Safety Complaint Form</h3>
+              </div>
+
+              <p className="text-gray-600 text-xs mb-4 leading-relaxed">
+                We maintain active security controls to prevent scams, phishing, harassment, and explicit content. Please declare your complaint:
+              </p>
+
+              <form onSubmit={handleReportSeekerSubmit} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-extrabold text-gray-700 uppercase tracking-wider mb-2">Primary Reason</label>
+                  <select 
+                    value={reportReason}
+                    onChange={(e) => setReportReason(e.target.value)}
+                    className="w-full bg-gray-50 border border-gray-150 rounded-xl px-3 py-2.5 text-xs font-bold text-gray-800 focus:outline-none focus:ring-2 focus:ring-red-500/10"
+                  >
+                    <option value="scam">Scam / Phishing / Fraud</option>
+                    <option value="explicit">Explicit/Nude/Inappropriate behavior</option>
+                    <option value="harassment">Abusive Content & Harassment</option>
+                    <option value="underage">Underage User Activity</option>
+                    <option value="off_platform">Requests payments off-platform</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-extrabold text-gray-700 uppercase tracking-wider mb-2">Context or Details</label>
+                  <textarea
+                    required
+                    value={reportDescription}
+                    onChange={(e) => setReportDescription(e.target.value)}
+                    placeholder="Provide incident details (contracts outside app, suspcious listing)..."
+                    className="w-full bg-gray-50 border border-gray-100 rounded-xl px-3 py-2.5 text-xs text-gray-750 min-h-[80px]"
+                  />
+                </div>
+
+                <div className="flex gap-2.5 justify-end pt-2">
+                  <button 
+                    type="button"
+                    onClick={() => setShowReportSeekerModal(false)}
+                    className="px-4 py-2.5 rounded-xl border border-gray-150 text-xs font-bold text-gray-500 hover:bg-gray-50"
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    type="submit"
+                    className="px-4 py-2.5 rounded-xl bg-red-650 hover:bg-red-700 text-white text-xs font-extrabold shadow-md transition"
+                  >
+                    Submit Report
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Block Confirmation Modal for seekers */}
+      <AnimatePresence>
+        {showBlockSeekerConfirm && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[160] bg-black/45 backdrop-blur-xs flex items-center justify-center p-4 text-slate-800"
+          >
+            <motion.div 
+              initial={{ scale: 0.95, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.95, y: 20 }}
+              className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl text-center"
+            >
+              <div className="mx-auto w-12 h-12 rounded-full bg-red-50 text-red-600 flex items-center justify-center mb-4">
+                <AlertTriangle size={24} />
+              </div>
+              <h3 className="text-base font-black text-gray-900 mb-2">Block Seeker?</h3>
+              <p className="text-gray-650 text-xs mb-6 leading-relaxed">
+                Are you sure you want to block this user? They will be muted, and their service postings will no longer be visible to you.
+              </p>
+              <div className="flex gap-2.5 justify-center">
+                <button 
+                  type="button"
+                  onClick={() => setShowBlockSeekerConfirm(false)}
+                  className="px-4 py-2.5 rounded-xl border border-gray-100 text-xs font-bold text-gray-500 hover:bg-gray-50 transition w-28"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="button"
+                  onClick={handleBlockSeekerSubmit}
+                  className="px-4 py-2.5 rounded-xl bg-red-650 hover:bg-red-700 text-white text-xs font-extrabold shadow-md transition w-28"
+                >
+                  Yes, Block
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
     </div>
   );
 }

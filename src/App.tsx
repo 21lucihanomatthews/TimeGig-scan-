@@ -14,9 +14,14 @@ import CwalletView from "./components/CwalletView";
 import MarketView from "./components/MarketView";
 import DocumentViewer from "./components/DocumentViewer";
 import MeetingArrivalView from "./components/MeetingArrivalView";
+import OnboardingGuide from "./components/OnboardingGuide";
 import AuthFlow from "./components/AuthFlow";
 import IdentityVerificationView from "./components/IdentityVerificationView";
 import HelpView from "./components/HelpView";
+import WorldCupFeverHub from "./components/WorldCupFeverHub";
+import FeatureExplainer from "./components/FeatureExplainer";
+import Top20SeekersBoard from "./components/Top20SeekersBoard";
+import TimeGigLogo from "./components/TimeGigLogo";
 import {
   Home,
   MessageSquare,
@@ -54,6 +59,8 @@ import {
   Power,
   LogOut,
   LifeBuoy,
+  Crown,
+  Upload,
 } from "lucide-react";
 
 const formatPriceForMarketplace = (priceStr: string) => {
@@ -70,52 +77,7 @@ const formatPriceForMarketplace = (priceStr: string) => {
   return cleaned;
 };
 
-const initialGigs = [
-  {
-    id: 1,
-    title: "Dog Walker",
-    description: "Friendly dog walker needed",
-    price: "R120/hr",
-    location: "Sandton",
-    images: [
-      "https://images.unsplash.com/photo-1516734212186-a967f81ad0d7?w=300&q=80",
-    ],
-    timing: "Immediate",
-  },
-  {
-    id: 2,
-    title: "Math Tutor",
-    description: "Experienced math tutor",
-    price: "R250/hr",
-    location: "Hatfield",
-    images: [
-      "https://images.unsplash.com/photo-1596495577886-d920f1244030?w=300&q=80",
-    ],
-    timing: "Immediate",
-  },
-  {
-    id: 3,
-    title: "Event Setup",
-    description: "Help with event setup",
-    price: "R150/hr",
-    location: "Green Point",
-    images: [
-      "https://images.unsplash.com/photo-1511578314328-91216d802117?w=300&q=80",
-    ],
-    timing: "Schedule",
-  },
-  {
-    id: 4,
-    title: "Car Wash",
-    description: "Professional car wash",
-    price: "R100/flat",
-    location: "Soweto",
-    images: [
-      "https://images.unsplash.com/photo-1520340356546-a95576e2598e?w=300&q=80",
-    ],
-    timing: "Immediate",
-  },
-];
+const initialGigs: Gig[] = [];
 
 interface Gig {
   id: number;
@@ -344,9 +306,11 @@ interface GigsFeedProps {
   gigs: Gig[];
   onShowCreateGig: () => void;
   onSelectGig: (gig: Gig) => void;
+  isVerified?: boolean;
+  onStartChat: (name: string, text: string, avatar: string) => void;
 }
 
-function GigsFeed({ gigs, onShowCreateGig, onSelectGig }: GigsFeedProps) {
+function GigsFeed({ gigs, onShowCreateGig, onSelectGig, isVerified, onStartChat }: GigsFeedProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const filteredGigs = gigs.filter(
     (gig) =>
@@ -360,11 +324,10 @@ function GigsFeed({ gigs, onShowCreateGig, onSelectGig }: GigsFeedProps) {
       {/* Header section identical to seekers but for Gigs Grid */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 tracking-tight flex items-center gap-2">
-            <Sparkles className="text-blue-600 animate-pulse" size={24} /> Gigs
-            Market
-          </h1>
-          <p className="text-xs text-gray-400 font-medium">
+          <div className="flex items-center">
+            <TimeGigLogo size="small" darkTheme={false} />
+          </div>
+          <p className="text-xs text-gray-450 font-semibold mt-1">
             Local gigs & jobs posted by verified nearby hirers
           </p>
         </div>
@@ -375,6 +338,43 @@ function GigsFeed({ gigs, onShowCreateGig, onSelectGig }: GigsFeedProps) {
           + Create Gig
         </button>
       </div>
+
+      {/* 🏆 DECORATIVE WORLD CUP STANDING FAN DISPLAY 🏆 */}
+      <div 
+        className="bg-gradient-to-r from-emerald-800 via-green-950 to-indigo-950 border border-emerald-600/30 rounded-3xl p-4 shadow-md text-white overflow-hidden relative"
+      >
+        {/* Decorative background soccer ball */}
+        <div className="absolute -right-3 -bottom-3 text-7xl opacity-10 select-none pointer-events-none">⚽</div>
+        <div className="relative z-10 flex items-center justify-between gap-3">
+          <div className="space-y-1">
+            <div className="flex items-center gap-1.5">
+              <span className="text-yellow-400 font-extrabold animate-bounce text-xs">🏆</span>
+              <p className="text-[9px] text-emerald-300 font-extrabold uppercase tracking-widest leading-none">World Cup Fever</p>
+            </div>
+            <p className="text-xs font-black text-white">TimeGiG Celebrates Soccer World Cup! ⚽🏆</p>
+            <p className="text-[9px] text-gray-350 leading-none mt-1">Bringing pitch-perfect neighborhood Gigs and professional secure solutions!</p>
+          </div>
+          <div className="flex items-center gap-2 bg-white/10 px-3 py-2 rounded-2xl border border-white/15 shadow-inner shrink-0 text-center">
+            <motion.span 
+              animate={{ rotate: 360 }}
+              transition={{ repeat: Infinity, duration: 4, ease: "linear" }}
+              className="text-2xl"
+            >
+              ⚽
+            </motion.span>
+            <motion.span 
+              animate={{ y: [0, -6, 0] }}
+              transition={{ repeat: Infinity, duration: 1.5, ease: "easeInOut" }}
+              className="text-2xl"
+            >
+              🏆
+            </motion.span>
+          </div>
+        </div>
+      </div>
+
+      {/* 🌟 FEATURE EXPLAINER ENGINE & GLASSBOARD 🌟 */}
+      <FeatureExplainer onStartChat={onStartChat} isVerified={!!isVerified} />
 
       {/* Styled Search Input premium decoration */}
       <div className="relative">
@@ -475,7 +475,7 @@ export default function App() {
     applicantAvatar: string;
   } | null>(null);
 
-  const [coinBalance, setCoinBalance] = useState<number>(350);
+  const [coinBalance, setCoinBalance] = useState<number>(0);
   const [showAdminDashboard, setShowAdminDashboard] = useState(false);
   const [selectedProofForReview, setSelectedProofForReview] = useState<
     any | null
@@ -493,16 +493,42 @@ export default function App() {
     safety: true,
     wallet: true
   });
-  const [appBackgroundUrl, setAppBackgroundUrl] = useState("");
-  const [appBackgroundBlur, setAppBackgroundBlur] = useState(0);
+  const [appBackgroundUrl, setAppBackgroundUrl] = useState(() => {
+    return localStorage.getItem("timegig_bg_url") || "";
+  });
+  const [appBackgroundBlur, setAppBackgroundBlur] = useState(() => {
+    const saved = localStorage.getItem("timegig_bg_blur");
+    return saved ? parseInt(saved) : 0;
+  });
+
+  useEffect(() => {
+    localStorage.setItem("timegig_bg_url", appBackgroundUrl || "");
+  }, [appBackgroundUrl]);
+
+  useEffect(() => {
+    localStorage.setItem("timegig_bg_blur", appBackgroundBlur.toString());
+  }, [appBackgroundBlur]);
+
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
+  const [showWorldCupHub, setShowWorldCupHub] = useState(false);
+  const [showTop20Seekers, setShowTop20Seekers] = useState(false);
   const [isDocumentViewerOpen, setIsDocumentViewerOpen] = useState(false);
   const [documentViewerSeeker, setDocumentViewerSeeker] = useState<any>(null);
   const [isMeetingArrivalOpen, setIsMeetingArrivalOpen] = useState(false);
   const [meetingArrivalData, setMeetingArrivalData] = useState<any>(null);
   const [isViewingDirectChat, setIsViewingDirectChat] = useState(false);
   const [isCreatingMarketItem, setIsCreatingMarketItem] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [isTopUpActive, setIsTopUpActive] = useState(false);
+  const [showSplash, setShowSplash] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowSplash(false);
+    }, 5000);
+    return () => clearTimeout(timer);
+  }, []);
 
   const [showHeader, setShowHeader] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
@@ -525,12 +551,23 @@ export default function App() {
       setReferralCode(ref);
       setShowReferralModal(true);
     }
+
   }, []);
 
   const [activeToast, setActiveToast] = useState<{
     message: string;
     type: "success" | "info" | "error";
   } | null>(null);
+
+  const canAfford = (amount: number) => coinBalance >= amount;
+  const deductCoins = (amount: number) => {
+    if (canAfford(amount)) {
+      setCoinBalance((prev) => prev - amount);
+      return true;
+    }
+    showToastNotification("Not enough coins!", "error");
+    return false;
+  };
 
   const showToastNotification = (
     message: string,
@@ -674,73 +711,10 @@ export default function App() {
       type: "gig" | "seeker" | "promotion" | "application";
       metaData?: any;
     }[]
-  >([
-    {
-      id: 1,
-      message:
-        "💼 New Gig Alert: High-paying 'Math tutor for highschooler' (R250/hr) is looking for help!",
-      read: false,
-      link: "home",
-      type: "gig",
-    },
-    {
-      id: 2,
-      message:
-        "👤 New Seeker Interest: Alice invited you to discuss event setup",
-      read: false,
-      link: "seekers",
-      type: "seeker",
-    },
-    {
-      id: 3,
-      message:
-        "🚀 Promotion: Level up your profile to stand out to 10x more seekers!",
-      read: false,
-      link: "user",
-      type: "promotion",
-    },
-  ]);
+  >([]);
 
   useEffect(() => {
-    // Schedule a live Seeker request simulation and an app promotion simulation
-    const seekerTimer = setTimeout(() => {
-      setNotifications((prev) => {
-        if (prev.some((n) => n.id === 999)) return prev;
-        return [
-          {
-            id: 999,
-            message:
-              "👤 Seeker Alert: Bob is looking for an 'Event Setup' specialist!",
-            read: false,
-            link: "seekers",
-            type: "seeker",
-          },
-          ...prev,
-        ];
-      });
-    }, 6000);
-
-    const promoTimer = setTimeout(() => {
-      setNotifications((prev) => {
-        if (prev.some((n) => n.id === 1000)) return prev;
-        return [
-          {
-            id: 1000,
-            message:
-              "🚀 Weekend Promotion: Post a gig now and get featured at the top of the search feed for free!",
-            read: false,
-            link: "home",
-            type: "promotion",
-          },
-          ...prev,
-        ];
-      });
-    }, 15000);
-
-    return () => {
-      clearTimeout(seekerTimer);
-      clearTimeout(promoTimer);
-    };
+    // Notifications simulation removed
   }, []);
 
   const addNotification = (
@@ -777,6 +751,8 @@ export default function App() {
   };
 
   const handleCreateGig = (newGig: Omit<Gig, "id">) => {
+    if (!deductCoins(2)) return;
+
     const gigId = Date.now();
     const createdGig = { ...newGig, id: gigId, isUserCreated: true };
     setGigs([...gigs, createdGig]);
@@ -784,30 +760,6 @@ export default function App() {
     setCongratulatoryMessage("Congratulations! Your gig is now live.");
     addNotification(`New gig posted: ${newGig.title}`, "home", "gig");
     setTimeout(() => setCongratulatoryMessage(""), 3000);
-
-    // Simulate someone applying to this new gig in 10 seconds
-    setTimeout(() => {
-      setNotifications((prev) => [
-        {
-          id: Date.now(),
-          message: `🔔 New Application! Sarah Adams applied for your gig "${newGig.title}". Tap to review.`,
-          read: false,
-          link: "bell",
-          type: "application",
-          metaData: {
-            gig: createdGig,
-            applicantName: "Sarah Adams",
-            applicantAvatar:
-              "https://api.dicebear.com/7.x/avataaars/svg?seed=Sarah%20Adams",
-          },
-        },
-        ...prev,
-      ]);
-      showToastNotification(
-        `🔔 New application received for "${newGig.title}"`,
-        "info",
-      );
-    }, 10000);
   };
 
   const handleNavigate = (link: string) => {
@@ -838,22 +790,14 @@ export default function App() {
     let messages = savedMessages ? JSON.parse(savedMessages) : [];
 
     if (messages.length === 0) {
-      const seekerWelcomeMessage = {
-        id: Date.now() - 5000,
-        text: `Hi there! I'm ${name}. Thanks for reaching out. Let's chat about my posting.`,
-        sender: "other",
-        type: "text",
-        timestamp: new Date().toLocaleTimeString(),
-        senderAvatar: partnerAvatar,
-      };
       const userMessage = {
         id: Date.now(),
         text: text,
-        sender: "user",
-        type: "text",
+        sender: 'user',
+        type: 'text',
         timestamp: new Date().toLocaleTimeString(),
       };
-      messages = [seekerWelcomeMessage, userMessage];
+      messages = [userMessage];
     } else {
       // If conversation already exists, just append the new message
       const userMessage = {
@@ -984,11 +928,8 @@ export default function App() {
       );
     }
     if (selectedGigForDetails) {
-      const hirerName = selectedGigForDetails.title.includes("Tutor")
-        ? "Professor Paul"
-        : selectedGigForDetails.title.includes("Dog")
-          ? "Jessica Smith"
-          : "Alex Johnson";
+      const isGigUserCreated = selectedGigForDetails.isUserCreated;
+      const hirerName = isGigUserCreated ? "Me (Logged In User)" : "Local Community Member";
       const hirerAvatar = `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(hirerName)}`;
 
       return (
@@ -1155,6 +1096,11 @@ export default function App() {
               <button
                 type="button"
                 onClick={() => {
+                  if (!isVerified) {
+                    showToastNotification("You must verify your profile before applying.", "error");
+                    return;
+                  }
+                  if (!deductCoins(3)) return;
                   setApplyGigState({
                     gig: selectedGigForDetails,
                     hirerName,
@@ -1183,20 +1129,38 @@ export default function App() {
             gigs={gigs}
             onShowCreateGig={() => setShowCreateGig(true)}
             onSelectGig={(gig) => setSelectedGigForDetails(gig)}
+            isVerified={isVerified}
+            onStartChat={(name, text, avatar) => handleStartChatFromSeeker(name, text, avatar)}
           />
         );
       case "seekers":
         return (
           <SeekersView
-            onStartChat={handleStartChatFromSeeker}
+            deductCoins={deductCoins}
+            onStartChat={(name, text, avatar) => {
+              if (!isVerified) {
+                showToastNotification("You must verify your profile before contacting seekers.", "error");
+                return;
+              }
+              handleStartChatFromSeeker(name, text, avatar);
+            }}
             onCreatingChange={setIsCreatingSeeker}
+            isVerified={isVerified}
           />
         );
       case "market":
         return (
           <MarketView 
-            onInterested={handleInterestedFromMarket} 
+            deductCoins={deductCoins}
+            onInterested={(seller) => {
+              if (!isVerified) {
+                showToastNotification("You must verify your profile before contacting sellers.", "error");
+                return;
+              }
+              handleInterestedFromMarket(seller);
+            }}
             onCreatingChange={setIsCreatingMarketItem}
+            isVerified={isVerified}
           />
         );
       case "cwallet":
@@ -1211,6 +1175,7 @@ export default function App() {
                 "info",
               );
             }}
+            onTopUpToggle={setIsTopUpActive}
           />
         );
       case "chat":
@@ -1219,6 +1184,7 @@ export default function App() {
             <ChatView
               partner={activeChatPartner}
               soundEnabled={soundEnabled}
+              deductCoins={deductCoins}
               onBack={() => setIsViewingDirectChat(false)}
               onViewProfile={() =>
                 setShowProfile({
@@ -1401,8 +1367,79 @@ export default function App() {
     localStorage.removeItem("is_verified");
     setIsAuthenticated(false);
     setIsVerified(false);
+    setShowOnboarding(false);
     showToastNotification("Logged out successfully", "info");
   };
+
+  if (showSplash) {
+    return (
+      <div className="fixed inset-0 z-[1000] bg-white flex flex-col items-center justify-center p-6 text-slate-800 text-center select-none">
+        {/* Abstract background soccer pitch lines decoration */}
+        <div className="absolute inset-0 opacity-10 pointer-events-none overflow-hidden">
+          <div className="w-full h-full border-[3px] border-slate-200 rounded-t-[100px] mt-24" />
+          <div className="w-64 h-64 border-[3px] border-slate-200 rounded-full mx-auto -mt-12" />
+        </div>
+
+        <motion.div
+          initial={{ scale: 0.8, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ duration: 0.8, ease: "easeOut" }}
+          className="relative z-10 space-y-6"
+        >
+          {/* Soccer Ball and World Cup Celebration Icons */}
+          <div className="flex items-center justify-center gap-6">
+            <motion.span 
+              animate={{ rotate: 360 }}
+              transition={{ repeat: Infinity, duration: 4, ease: "linear" }}
+              className="text-5xl drop-shadow-[0_0_15px_rgba(37,99,235,0.2)]"
+            >
+              ⚽
+            </motion.span>
+            <motion.span 
+              animate={{ y: [0, -12, 0] }}
+              transition={{ repeat: Infinity, duration: 1.5, ease: "easeInOut" }}
+              className="text-6xl drop-shadow-[0_0_20px_rgba(234,179,8,0.3)]"
+            >
+              🏆
+            </motion.span>
+          </div>
+
+          <div className="space-y-2 flex flex-col items-center justify-center">
+            {/* Animated Title TimeGiG */}
+            <TimeGigLogo size="large" darkTheme={false} />
+
+            <motion.p 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 0.8 }}
+              transition={{ delay: 0.6, duration: 0.5 }}
+              className="text-xs text-gray-500 font-extrabold uppercase tracking-[0.25em] mt-2 text-center"
+            >
+              Pitch-Perfect Gig Solutions
+            </motion.p>
+          </div>
+
+          {/* Loading status bar */}
+          <div className="w-48 h-1 bg-gray-100 rounded-full mx-auto overflow-hidden relative">
+            <motion.div 
+              className="absolute left-0 top-0 h-full bg-gradient-to-r from-blue-500 to-indigo-500"
+              initial={{ width: "0%" }}
+              animate={{ width: "100%" }}
+              transition={{ duration: 5, ease: "linear" }}
+            />
+          </div>
+
+          <motion.p 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 0.5 }}
+            transition={{ delay: 1, duration: 0.5 }}
+            className="text-[10px] text-gray-400 font-bold uppercase tracking-widest"
+          >
+            Entering Stadium...
+          </motion.p>
+        </motion.div>
+      </div>
+    );
+  }
 
   if (!isAuthenticated) {
     return (
@@ -1410,9 +1447,14 @@ export default function App() {
         onComplete={(data) => {
           setUserData(data);
           setIsAuthenticated(true);
+          setShowOnboarding(true);
         }}
       />
     );
+  }
+
+  if (showOnboarding) {
+    return <OnboardingGuide onFinish={() => setShowOnboarding(false)} />;
   }
 
   if (showVerification) {
@@ -1422,7 +1464,8 @@ export default function App() {
         onComplete={() => {
           setIsVerified(true);
           setShowVerification(false);
-          showToastNotification("Identity verified successfully!", "success");
+          setCoinBalance(prev => prev + 15);
+          showToastNotification("Identity verified successfully! You received 15 free coins.", "success");
         }}
       />
     );
@@ -1432,6 +1475,19 @@ export default function App() {
     return (
       <HelpView 
         onBack={() => setShowHelp(false)}
+        coinBalance={coinBalance}
+        isVerified={isVerified}
+        userData={userData}
+      />
+    );
+  }
+
+  if (showWorldCupHub) {
+    return (
+      <WorldCupFeverHub 
+        onBack={() => setShowWorldCupHub(false)}
+        coinBalance={coinBalance}
+        setCoinBalance={setCoinBalance}
       />
     );
   }
@@ -1498,12 +1554,12 @@ export default function App() {
               transition={{ duration: 0.3, ease: "easeInOut" }}
             >
               <motion.button
-                className={`relative bg-white shadow-md hover:shadow-lg transition-all p-3 rounded-full flex items-center justify-center ${activeTab === "chat" ? "text-blue-600 font-bold" : "text-gray-700"} hover:text-blue-600`}
-                onClick={() => setActiveTab("chat")}
+                className={`relative bg-white shadow-md hover:shadow-lg transition-all p-3 rounded-full flex items-center justify-center ${activeTab === "cwallet" ? "text-blue-600 font-bold" : "text-gray-700"} hover:text-blue-600`}
+                onClick={() => setActiveTab("cwallet")}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
-                <MessageSquare size={24} />
+                <Wallet size={24} />
               </motion.button>
 
               {/* Bell Notifications */}
@@ -1576,6 +1632,16 @@ export default function App() {
                       <button
                         onClick={() => {
                           setShowTopMenu(false);
+                          setShowTop20Seekers(true);
+                        }}
+                        className="w-full text-left px-4 py-3 text-sm font-semibold text-yellow-600 hover:bg-yellow-50 flex items-center gap-2"
+                      >
+                        <Crown size={16} className="text-yellow-500 animate-pulse" /> Top 20 Seekers
+                      </button>
+                      <div className="h-[1px] bg-gray-100"></div>
+                      <button
+                        onClick={() => {
+                          setShowTopMenu(false);
                           setActiveTab("user");
                         }}
                         className="w-full text-left px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 flex items-center gap-2"
@@ -1583,20 +1649,22 @@ export default function App() {
                         <User size={16} /> Profile
                       </button>
                       <div className="h-[1px] bg-gray-100"></div>
-                      <button
-                        onClick={() => {
-                          setShowTopMenu(false);
-                          setShowAdminDashboard(true);
-                        }}
-                        className="w-full text-left px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 flex items-center gap-2"
-                      >
-                        <Shield size={16} /> Admin Dashboard
-                        {pendingPayments.length > 0 && (
-                          <span className="ml-auto bg-indigo-500 rounded-full px-2 py-0.5 text-[10px] font-bold text-white shadow-sm">
-                            {pendingPayments.length}
-                          </span>
-                        )}
-                      </button>
+                      {userData?.email === "21lucihanomatthews@gmail.com" && (
+                        <button
+                          onClick={() => {
+                            setShowTopMenu(false);
+                            setShowAdminDashboard(true);
+                          }}
+                          className="w-full text-left px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                        >
+                          <Shield size={16} /> Admin Dashboard
+                          {pendingPayments.length > 0 && (
+                            <span className="ml-auto bg-indigo-500 rounded-full px-2 py-0.5 text-[10px] font-bold text-white shadow-sm">
+                              {pendingPayments.length}
+                            </span>
+                          )}
+                        </button>
+                      )}
                       <div className="h-[1px] bg-gray-100"></div>
                       <button
                         onClick={() => {
@@ -1640,7 +1708,8 @@ export default function App() {
           !showCreateGig &&
           !isCreatingSeeker &&
           !isCreatingMarketItem &&
-          !showProfile && (
+          !showProfile &&
+          !isTopUpActive && (
             <footer className="fixed bottom-0 w-full bg-white border-t border-gray-200 h-16 flex items-center justify-around px-2 shadow-lg z-30">
               <button
                 onClick={() => setActiveTab("home")}
@@ -1669,14 +1738,23 @@ export default function App() {
               </button>
 
               <button
-                onClick={() => setActiveTab("cwallet")}
-                className={`flex flex-col items-center justify-center p-2 transition-colors w-16 ${activeTab === "cwallet" ? "text-blue-600 font-bold" : "text-gray-500"}`}
+                onClick={() => setActiveTab("chat")}
+                className={`flex flex-col items-center justify-center p-2 transition-colors w-16 ${activeTab === "chat" ? "text-blue-600 font-bold" : "text-gray-500"}`}
               >
-                <Wallet size={22} />
-                <span className="text-[9px] mt-0.5">C-Wallet</span>
+                <MessageSquare size={22} />
+                <span className="text-[9px] mt-0.5">Chat</span>
               </button>
             </footer>
           )}
+
+        {/* Top 20 Candidates Board Overlay */}
+        <Top20SeekersBoard
+          isOpen={showTop20Seekers}
+          onClose={() => setShowTop20Seekers(false)}
+          onStartChat={handleStartChatFromSeeker}
+          deductCoins={deductCoins}
+          coinBalance={coinBalance}
+        />
 
         {/* Apply to Gig Flow Overlay */}
         {applyGigState && (
@@ -2001,7 +2079,7 @@ export default function App() {
         )}
 
         {/* Admin Dashboard Overlay */}
-        {showAdminDashboard && (
+        {showAdminDashboard && userData?.email === "21lucihanomatthews@gmail.com" && (
           <div className="fixed inset-0 z-[120] bg-slate-900 overflow-y-auto">
             <div className="max-w-2xl mx-auto min-h-screen bg-slate-50 relative pb-20">
               <div className="bg-indigo-600 text-white p-6 pt-12 rounded-b-3xl shadow-lg">
@@ -2042,6 +2120,35 @@ export default function App() {
               </div>
 
               <div className="p-6">
+                {/* Admin Promotion Creation */}
+                <div className="bg-white p-6 rounded-2xl border border-slate-200 mb-6 shadow-sm">
+                  <h4 className="font-bold text-slate-800 mb-3 flex items-center gap-2">
+                    <Sparkles className="w-5 h-5 text-indigo-500" />
+                    Create Promotion
+                  </h4>
+                  <input
+                    type="text"
+                    placeholder="Enter promotion message"
+                    id="promo-input"
+                    className="w-full p-3 border border-slate-200 rounded-xl mb-3 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                  />
+                  <button
+                    onClick={() => {
+                      const input = document.getElementById(
+                        "promo-input",
+                      ) as HTMLInputElement;
+                      if (input.value) {
+                        addNotification(input.value, "home", "promotion");
+                        input.value = "";
+                        showToastNotification("Promotion created!", "success");
+                      }
+                    }}
+                    className="w-full py-3 bg-indigo-600 text-white rounded-xl font-bold text-sm hover:bg-indigo-700 transition"
+                  >
+                    Send Promotion Notification
+                  </button>
+                </div>
+
                 <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
                   Pending Approvals
                   {pendingPayments.length > 0 && (
@@ -2148,6 +2255,33 @@ export default function App() {
                 <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
                   <div>
                     <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+                      Upload from Device
+                    </label>
+                    <div className="flex flex-col justify-center items-center border border-dashed border-slate-300 rounded-xl p-5 bg-slate-50 hover:bg-slate-100 transition relative mb-4">
+                      <Upload className="w-8 h-8 text-indigo-500 mb-2 animate-bounce" />
+                      <span className="text-xs font-bold text-slate-700">Choose Image File</span>
+                      <span className="text-[9px] text-slate-400 mt-1">PNG, JPG or WebP</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            const reader = new FileReader();
+                            reader.onload = (event) => {
+                              if (event.target?.result) {
+                                setAppBackgroundUrl(event.target.result as string);
+                                showToastNotification("Wallpaper set successfully!", "success");
+                              }
+                            };
+                            reader.readAsDataURL(file);
+                          }
+                        }}
+                      />
+                    </div>
+
+                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
                       Wallpaper URL
                     </label>
                     <input
@@ -2158,7 +2292,7 @@ export default function App() {
                       className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
                     />
                     <p className="text-[10px] text-slate-400 mt-1">
-                      Leave empty to remove wallpaper.
+                      Leave empty to remove wallpaper. Or upload/clear a file.
                     </p>
                   </div>
                   <div>
@@ -2259,7 +2393,7 @@ export default function App() {
                 You've Been Invited!
               </h2>
               <p className="text-gray-500 text-sm mb-8 leading-relaxed px-2">
-                Join the Gig Neighbors app via referral code{" "}
+                Join the TimeGiG app via referral code{" "}
                 <strong className="text-blue-600 tracking-wide">
                   {referralCode}
                 </strong>{" "}

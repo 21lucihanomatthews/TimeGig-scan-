@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, Image, Video as VideoIcon, MessageSquare, ShieldAlert, X, ShieldCheck, Camera, PhoneOff, Mic, Settings, MapPin, AlertTriangle, ChevronLeft } from 'lucide-react';
+import { Send, Image, Video as VideoIcon, MessageSquare, ShieldAlert, X, ShieldCheck, Camera, PhoneOff, Mic, Settings, MapPin, AlertTriangle, ChevronLeft, MoreVertical, Loader2, Trash2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 interface Message {
@@ -19,6 +19,7 @@ interface ChatViewProps {
   onViewDocuments: () => void;
   onMeetingConfirmed: () => void;
   soundEnabled: boolean;
+  deductCoins: (amount: number) => boolean;
 }
 
 const ChatView: React.FC<ChatViewProps> = ({ 
@@ -27,10 +28,40 @@ const ChatView: React.FC<ChatViewProps> = ({
   onViewProfile, 
   onViewDocuments, 
   onMeetingConfirmed, 
-  soundEnabled 
+  soundEnabled,
+  deductCoins
 }) => {
   const chatKey = `chat_messages_${partner.name.replace(/\s+/g, '_')}`;
   const [messages, setMessages] = useState<Message[]>([]);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [showThreeDotMenu, setShowThreeDotMenu] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [showBlockConfirm, setShowBlockConfirm] = useState(false);
+  const [isReported, setIsReported] = useState(false);
+  const [isBlocked, setIsBlocked] = useState(false);
+  const [reportReason, setReportReason] = useState('scam');
+  const [reportDescription, setReportDescription] = useState('');
+  const [showSuccessToast, setShowSuccessToast] = useState<string | null>(null);
+
+  const triggerToast = (msg: string) => {
+    setShowSuccessToast(msg);
+    setTimeout(() => {
+      setShowSuccessToast(null);
+    }, 4000);
+  };
+
+  const handleReportSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsReported(true);
+    setShowReportModal(false);
+    triggerToast(`🛡️ Thank you. Your report is submitted. Our standard moderation agents will audit this active conversation history and address infractions promptly.`);
+  };
+
+  const handleBlockPartner = () => {
+    setIsBlocked(true);
+    setShowBlockConfirm(false);
+    triggerToast(`🚫 Blocked successfully. ${partner.name} can no longer see your listing profile or communicate with you on our network.`);
+  };
   const [inputText, setInputText] = useState('');
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [pendingFile, setPendingFile] = useState<{type: 'image' | 'video', url: string} | null>(null);
@@ -58,12 +89,7 @@ const ChatView: React.FC<ChatViewProps> = ({
     if (savedMessages) {
       setMessages(JSON.parse(savedMessages));
     } else {
-      const globalStub = localStorage.getItem('chat_messages');
-      if (globalStub && partner.name === 'Service Provider') {
-        setMessages(JSON.parse(globalStub));
-      } else {
-        setMessages([]);
-      }
+      setMessages([]);
     }
   }, [chatKey]);
 
@@ -145,8 +171,10 @@ const ChatView: React.FC<ChatViewProps> = ({
     }
   };
 
-  const handleSendMessage = (type: 'text' | 'image' | 'video', fileUrl?: string, text = inputText) => {
+  const handleSendMessage = async (type: 'text' | 'image' | 'video', fileUrl?: string, text = inputText) => {
     if (!text && !fileUrl) return;
+
+    if (!deductCoins(1)) return;
 
     const newMessage: Message = {
       id: Date.now(),
@@ -158,7 +186,8 @@ const ChatView: React.FC<ChatViewProps> = ({
       senderAvatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=user',
     };
 
-    saveMessages([...messages, newMessage]);
+    const updatedMessages = [...messages, newMessage];
+    saveMessages(updatedMessages);
     
     if (type === 'text') {
       checkMeetingIntent(text);
@@ -167,22 +196,6 @@ const ChatView: React.FC<ChatViewProps> = ({
     setInputText('');
     setPendingFile(null); 
     setShowEmojiPicker(false);
-    
-    setTimeout(() => {
-      const reply: Message = {
-        id: Date.now() + 1,
-        text: 'Received! Looking great.',
-        sender: 'other',
-        type: 'text',
-        timestamp: new Date().toLocaleTimeString(),
-        senderAvatar: partner.avatar,
-      };
-      saveMessages([...messages, newMessage, reply]);
-      if (soundEnabled) {
-        const audio = new Audio("https://assets.mixkit.co/active_storage/sfx/2358/2358-preview.mp3");
-        audio.play().catch(() => {});
-      }
-    }, 1000);
   };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, type: 'image' | 'video') => {
@@ -195,6 +208,24 @@ const ChatView: React.FC<ChatViewProps> = ({
 
   return (
     <div className="flex flex-col h-full bg-white relative overflow-hidden">
+      {/* Animated Protection Toast */}
+      <AnimatePresence>
+        {showSuccessToast && (
+          <motion.div
+            initial={{ opacity: 0, y: -50 }}
+            animate={{ opacity: 1, y: 16 }}
+            exit={{ opacity: 0, y: -50 }}
+            className="absolute top-4 left-4 right-4 z-[250] bg-slate-900 text-white text-xs font-semibold p-4 rounded-2xl shadow-xl flex items-start gap-3 border border-slate-750"
+          >
+            <ShieldCheck className="text-green-400 shrink-0 mt-0.5" size={18} />
+            <div>
+              <p className="font-extrabold tracking-tight">Security Alert Response</p>
+              <p className="opacity-90 leading-relaxed mt-0.5">{showSuccessToast}</p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <header className="px-4 py-2 border-b flex justify-between items-center bg-white/95 backdrop-blur-md sticky top-0 z-[100]">
         <div className="flex items-center gap-3">
           <button onClick={onBack} className="p-2 -ml-2 text-gray-400 hover:text-blue-600 transition-colors">
@@ -211,16 +242,20 @@ const ChatView: React.FC<ChatViewProps> = ({
               <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-green-500 border-2 border-white rounded-full shadow-sm" />
             </div>
             <div className="min-w-0">
-              <h2 className="font-extrabold text-slate-900 leading-tight text-xs truncate max-w-[120px] tracking-tight">{partner.name}</h2>
+              <h2 className="font-extrabold text-slate-900 leading-tight text-xs truncate max-w-[120px] tracking-tight">
+                {partner.name}
+              </h2>
               <div className="flex items-center gap-1">
                 <ShieldCheck size={10} className="text-blue-500" />
-                <p className="text-[8px] text-slate-400 font-black uppercase tracking-wider">Trusted Neighbor</p>
+                <p className="text-[8px] text-slate-400 font-black uppercase tracking-wider">
+                  {isBlocked ? 'Blocked User' : isReported ? 'Reported Account' : 'Trusted Neighbor'}
+                </p>
               </div>
             </div>
           </div>
         </div>
         
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1.5 relative">
           <button 
             onClick={onViewDocuments}
             className="w-9 h-9 rounded-xl bg-slate-50 text-slate-400 flex items-center justify-center hover:bg-slate-100 hover:text-blue-600 transition-all active:scale-90"
@@ -231,11 +266,73 @@ const ChatView: React.FC<ChatViewProps> = ({
           <button 
             onClick={() => setShowVideoCall(true)}
             className="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center hover:bg-blue-100 transition-all active:scale-90 shadow-sm shadow-blue-500/5"
+            title="Video Call"
           >
             <VideoIcon size={18} />
           </button>
+          <button 
+            onClick={() => setShowThreeDotMenu(!showThreeDotMenu)}
+            className="w-9 h-9 rounded-xl bg-slate-50 text-slate-500 flex items-center justify-center hover:bg-slate-100 transition-all active:scale-90"
+            title="Safety/Reports"
+          >
+            <MoreVertical size={18} />
+          </button>
+
+          <AnimatePresence>
+            {showThreeDotMenu && (
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.95, y: -10 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: -10 }}
+                className="absolute top-11 right-0 bg-white border border-gray-100 rounded-2xl shadow-xl p-1.5 z-[130] w-48 text-left"
+              >
+                <button 
+                  onClick={() => {
+                    setShowReportModal(true);
+                    setShowThreeDotMenu(false);
+                  }} 
+                  className="flex items-center gap-2 text-red-650 hover:bg-red-50 font-extrabold text-[11px] w-full text-left px-3 py-2.5 rounded-xl transition"
+                >
+                  <ShieldAlert size={14} className="shrink-0" />
+                  Report Conversation
+                </button>
+                <button 
+                  onClick={() => {
+                    setShowBlockConfirm(true);
+                    setShowThreeDotMenu(false);
+                  }} 
+                  className="flex items-center gap-2 text-gray-750 hover:bg-gray-50 font-bold text-[11px] w-full text-left px-3 py-2.5 rounded-xl transition"
+                >
+                  <X size={14} className="shrink-0" />
+                  {isBlocked ? 'Blocked' : 'Block Chat partner'}
+                </button>
+                <button 
+                  onClick={() => {
+                    localStorage.removeItem(chatKey);
+                    localStorage.removeItem('active_chat_partner');
+                    setMessages([]);
+                    setShowThreeDotMenu(false);
+                    onBack();
+                  }} 
+                  className="flex items-center gap-2 text-red-500 hover:bg-red-50 font-extrabold text-[11px] w-full text-left px-3 py-2.5 rounded-xl transition"
+                >
+                  <Trash2 size={14} className="shrink-0" />
+                  Delete Chat History
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </header>
+
+      {isBlocked && (
+        <div className="bg-red-50 text-red-700 p-4 font-extrabold text-xs text-center border-y border-red-100 z-10">
+          🚫 You have blocked this user. Messages and transactions are suspended.
+        </div>
+      )}
+
+      {/* Main Chat Grid (blurred if blocked) */}
+      <div className={`flex-grow flex flex-col min-h-0 ${isBlocked ? 'opacity-35 pointer-events-none' : ''}`}>
       
       <div className="flex-grow p-4 overflow-y-auto space-y-4 no-scrollbar">
         {messages.map(msg => (
@@ -270,6 +367,19 @@ const ChatView: React.FC<ChatViewProps> = ({
             </div>
           </motion.div>
         ))}
+        {isGenerating && (
+          <motion.div 
+            initial={{ opacity: 0, y: 10 }} 
+            animate={{ opacity: 1, y: 0 }} 
+            className="flex justify-start items-end gap-2"
+          >
+            <img src={partner.avatar} alt="avatar" className="w-8 h-8 rounded-full border border-gray-100" />
+            <div className="p-3 bg-gray-50 border border-gray-150 rounded-[20px] rounded-bl-none flex items-center gap-1.5 shadow-sm text-xs text-gray-500 font-extrabold">
+              <Loader2 size={13} className="animate-spin text-blue-500" />
+              <span>{partner.name} is typing...</span>
+            </div>
+          </motion.div>
+        )}
         <div ref={messagesEndRef} />
       </div>
 
@@ -384,6 +494,7 @@ const ChatView: React.FC<ChatViewProps> = ({
           </button>
         </div>
       </div>
+    </div>
 
       {/* Full-Screen Video Call Simulation */}
       <AnimatePresence>
@@ -550,6 +661,128 @@ const ChatView: React.FC<ChatViewProps> = ({
               </div>
               <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest opacity-50">End call to return to chat</p>
             </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Report Modal */}
+      <AnimatePresence>
+        {showReportModal && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[150] bg-black/45 backdrop-blur-xs flex items-center justify-center p-4 text-slate-800"
+          >
+            <motion.div 
+              initial={{ scale: 0.95, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.95, y: 20 }}
+              className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl relative text-left"
+            >
+              <button 
+                onClick={() => setShowReportModal(false)}
+                className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
+              >
+                <X size={20} />
+              </button>
+
+              <div className="flex items-center gap-2 mb-4">
+                <AlertTriangle className="text-red-500" size={24} />
+                <h3 className="text-lg font-black text-gray-900">Safety Report (Chat)</h3>
+              </div>
+
+              <p className="text-gray-600 text-xs mb-4 leading-relaxed">
+                Report this chat session for violation of terms, explicit content, spam, off-platform payments, or fraudulent requests.
+              </p>
+
+              <form onSubmit={handleReportSubmit} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-extrabold text-gray-700 uppercase tracking-wider mb-2">Select Reason</label>
+                  <select 
+                    value={reportReason}
+                    onChange={(e) => setReportReason(e.target.value)}
+                    className="w-full bg-gray-50 border border-gray-100 rounded-xl px-3 py-2.5 text-xs font-bold text-gray-800 focus:outline-none focus:ring-2 focus:ring-red-500/10"
+                  >
+                    <option value="scam">Scam / Phishing / Fraud</option>
+                    <option value="explicit">Explicit/Nude/Inappropriate images or words</option>
+                    <option value="abuse">Harassment or Abusive threats</option>
+                    <option value="off_platform">Attempts payment off platform</option>
+                    <option value="other">Other violation</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-extrabold text-gray-700 uppercase tracking-wider mb-2">Description</label>
+                  <textarea
+                    required
+                    value={reportDescription}
+                    onChange={(e) => setReportDescription(e.target.value)}
+                    placeholder="Provide specific details about explicit content or details..."
+                    className="w-full bg-gray-50 border border-gray-100 rounded-xl px-3 py-2.5 text-xs text-gray-700 min-h-[80px]"
+                  />
+                </div>
+
+                <div className="flex gap-2.5 justify-end pt-2">
+                  <button 
+                    type="button"
+                    onClick={() => setShowReportModal(false)}
+                    className="px-4 py-2.5 rounded-xl border border-gray-100 text-xs font-bold text-gray-500 hover:bg-gray-50"
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    type="submit"
+                    className="px-4 py-2.5 rounded-xl bg-red-650 hover:bg-red-700 text-white text-xs font-extrabold shadow-md"
+                  >
+                    Submit Report
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Block Confirmation */}
+      <AnimatePresence>
+        {showBlockConfirm && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[150] bg-black/45 backdrop-blur-xs flex items-center justify-center p-4 text-slate-800"
+          >
+            <motion.div 
+              initial={{ scale: 0.95, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.95, y: 20 }}
+              className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl text-center"
+            >
+              <div className="mx-auto w-12 h-12 rounded-full bg-red-50 text-red-600 flex items-center justify-center mb-4">
+                <ShieldAlert size={24} />
+              </div>
+              <h3 className="text-base font-black text-gray-900 mb-2">Block {partner.name}?</h3>
+              <p className="text-gray-600 text-xs mb-6 leading-relaxed">
+                Are you sure you want to block {partner.name}? You will no longer receive any messages, alerts, or media calls from them.
+              </p>
+              <div className="flex gap-2.5 justify-center">
+                <button 
+                  type="button"
+                  onClick={() => setShowBlockConfirm(false)}
+                  className="px-4 py-2.5 rounded-xl border border-gray-100 text-xs font-bold text-gray-500 w-28"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="button"
+                  onClick={handleBlockPartner}
+                  className="px-4 py-2.5 rounded-xl bg-red-650 hover:bg-red-700 text-white text-xs font-extrabold w-28 transition"
+                >
+                  Yes, Block
+                </button>
+              </div>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>

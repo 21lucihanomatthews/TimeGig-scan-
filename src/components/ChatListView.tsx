@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, MessageSquare, ChevronRight, Clock, ShieldCheck, ChevronLeft } from 'lucide-react';
+import { Search, MessageSquare, ChevronRight, Clock, ShieldCheck, ChevronLeft, Trash2 } from 'lucide-react';
 import { motion } from 'motion/react';
 
 interface Contact {
@@ -19,7 +19,22 @@ const ChatListView: React.FC<ChatListViewProps> = ({ onSelectContact, onBack }) 
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
 
-  useEffect(() => {
+    useEffect(() => {
+    // Clean out known mock bots from localStorage chat histories
+    const knownMockBotNames = [
+      "Sindi Khumalo", "Pieter Naidoo", "Thabo Mokwena",
+      "Zola Dlamini", "Jack de Klerk", "Chloe Patel",
+      "Brandon Daniels", "Fatima Moola", "Lebo Morake",
+      "Nicole Swart", "Sipho Gumbo", "Mary Ndlovu",
+      "Dave Kruger", "Amara Nkosi", "Johan Smit",
+      "Lerato Molefe", "Kevin Govender", "Rachel van Wyk",
+      "Jessica Smith", "Professor Paul", "bot_seeker_1", "bot_seeker_2"
+    ];
+
+    knownMockBotNames.forEach(bot => {
+      localStorage.removeItem(`chat_messages_${bot.replace(/\s+/g, '_')}`);
+    });
+
     // Collect all contacts from localStorage chat keys
     const allContacts: Contact[] = [];
     
@@ -53,23 +68,23 @@ const ChatListView: React.FC<ChatListViewProps> = ({ onSelectContact, onBack }) 
         }
     }
 
-    // Add some mock contacts if list is empty to make it look alive
-    if (allContacts.length === 0) {
-      allContacts.push({
-        name: "Jessica Smith",
-        avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Jessica%20Smith",
-        lastMessage: "Is the dog walking gig still available?",
-        timestamp: "10:30 AM",
-        unreadCount: 1
-      });
-      allContacts.push({
-        name: "Professor Paul",
-        avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Professor%20Paul",
-        lastMessage: "I'll see you for the tutoring session at 4pm.",
-        timestamp: "Yesterday",
-        unreadCount: 0
-      });
-    }
+    // Remove mock contacts as per request
+    // if (allContacts.length === 0) {
+    //   allContacts.push({
+    //     name: "Jessica Smith",
+    //     avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Jessica%20Smith",
+    //     lastMessage: "Is the dog walking gig still available?",
+    //     timestamp: "10:30 AM",
+    //     unreadCount: 1
+    //   });
+    //   allContacts.push({
+    //     name: "Professor Paul",
+    //     avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Professor%20Paul",
+    //     lastMessage: "I'll see you for the tutoring session at 4pm.",
+    //     timestamp: "Yesterday",
+    //     unreadCount: 0
+    //   });
+    // }
 
     setContacts(allContacts.sort((a, b) => b.timestamp.localeCompare(a.timestamp)));
   }, []);
@@ -122,14 +137,14 @@ const ChatListView: React.FC<ChatListViewProps> = ({ onSelectContact, onBack }) 
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: idx * 0.05 }}
               onClick={() => onSelectContact(contact.name, contact.avatar)}
-              className="bg-white p-4 rounded-2xl border border-slate-100 flex items-center gap-4 hover:border-blue-200 hover:shadow-lg hover:shadow-blue-500/5 transition-all cursor-pointer group"
+              className="bg-white p-4 rounded-2xl border border-slate-100 flex items-center gap-4 hover:border-blue-200 hover:shadow-lg hover:shadow-blue-500/5 transition-all cursor-pointer group relative"
             >
               <div className="relative">
                 <img src={contact.avatar} className="w-14 h-14 rounded-2xl object-cover border-2 border-slate-50" alt="" />
                 <div className="absolute -bottom-1 -right-1 bg-green-500 w-4 h-4 rounded-full border-2 border-white shadow-sm" />
               </div>
               
-              <div className="flex-grow min-w-0">
+              <div className="flex-grow min-w-0 pr-8">
                 <div className="flex items-center justify-between mb-0.5">
                   <div className="flex items-center gap-1.5">
                     <h3 className="font-black text-slate-900 truncate tracking-tight">{contact.name}</h3>
@@ -142,13 +157,19 @@ const ChatListView: React.FC<ChatListViewProps> = ({ onSelectContact, onBack }) 
                 </p>
               </div>
 
-              <div className="flex flex-col items-end gap-2">
-                {contact.unreadCount > 0 && (
-                   <div className="bg-blue-600 text-white text-[10px] font-black w-5 h-5 rounded-full flex items-center justify-center">
-                      {contact.unreadCount}
-                   </div>
-                )}
-                <ChevronRight size={16} className="text-slate-300 group-hover:text-blue-500 transform group-hover:translate-x-1 transition-all" />
+              <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    localStorage.removeItem(`chat_messages_${contact.name.replace(/\s+/g, '_')}`);
+                    localStorage.removeItem('active_chat_partner');
+                    setContacts(prev => prev.filter(c => c.name !== contact.name));
+                  }}
+                  className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-full transition-all"
+                  aria-label="Delete chat"
+                >
+                  <Trash2 size={16} />
+                </button>
               </div>
             </motion.div>
           ))

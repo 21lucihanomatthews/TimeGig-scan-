@@ -31,6 +31,10 @@ export default function AuthFlow({ onComplete }: AuthFlowProps) {
 
   const handleSignup = (e: React.FormEvent) => {
     e.preventDefault();
+    if (localStorage.getItem("user_account")) {
+      setError("An account already exists on this device. You can only have one account.");
+      return;
+    }
     if (!email || !password) {
       setError("Please fill in all fields");
       return;
@@ -101,7 +105,7 @@ export default function AuthFlow({ onComplete }: AuthFlowProps) {
                 <Shield className="text-white w-8 h-8" />
               </div>
               <h1 className="text-2xl font-black text-gray-900 tracking-tight">Create Account</h1>
-              <p className="text-sm text-gray-500">Join the Gig Neighbors community</p>
+              <p className="text-sm text-gray-500">Join the TimeGiG community</p>
             </div>
 
             <form onSubmit={handleSignup} className="space-y-4">
@@ -161,7 +165,7 @@ export default function AuthFlow({ onComplete }: AuthFlowProps) {
 
             <div className="bg-gray-50 border border-gray-100 rounded-3xl p-6 h-64 overflow-y-auto space-y-4">
               <p className="text-xs text-gray-600 leading-relaxed font-medium">
-                Welcome to Gig Neighbors. By creating an account, you agree to treat your neighbors with respect and professionalism.
+                Welcome to TimeGiG. By creating an account, you agree to treat your neighbors with respect and professionalism.
               </p>
               <p className="text-xs text-gray-600 leading-relaxed font-medium">
                 1. <strong>Safety First:</strong> Always meet in public places for initial gig interactions.
@@ -185,7 +189,7 @@ export default function AuthFlow({ onComplete }: AuthFlowProps) {
                 className="mt-1 w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-600"
               />
               <span className="text-xs font-bold text-gray-700 leading-snug">
-                I have read and accept the terms and conditions for using Gig Neighbors.
+                I have read and accept the terms and conditions for using TimeGiG.
               </span>
             </label>
 

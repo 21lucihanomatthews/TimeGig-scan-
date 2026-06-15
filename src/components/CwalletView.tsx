@@ -28,38 +28,7 @@ interface Contact {
   avatar: string;
 }
 
-const CONTACTS: Contact[] = [
-  {
-    id: "sipho",
-    name: "Sipho M.",
-    location: "Sunninghill, JHB",
-    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=sipho",
-  },
-  {
-    id: "lerato",
-    name: "Lerato K.",
-    location: "Soweto, JHB",
-    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=lerato",
-  },
-  {
-    id: "arthur",
-    name: "Arthur S.",
-    location: "Green Point, CPT",
-    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=arthur",
-  },
-  {
-    id: "sarah",
-    name: "Sarah D.",
-    location: "Hatfield, PTA",
-    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=sarah",
-  },
-  {
-    id: "jenny",
-    name: "Jenny Y.",
-    location: "Umhlanga, DBN",
-    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=jenny",
-  },
-];
+const CONTACTS: Contact[] = [];
 
 interface Transaction {
   id: number;
@@ -81,43 +50,14 @@ interface CoinOption {
 }
 
 const coinOptionsList: CoinOption[] = [
-  { id: 1, name: "Expire after 5 days", coins: 10, price: 3 },
-  { id: 2, name: "Expire after 5 days", coins: 20, price: 5 },
-  { id: 3, name: "Expire after 5 days", coins: 50, price: 10 },
-  { id: 4, name: "Expire after 30 days", coins: 100, price: 15.99 },
-  { id: 5, name: "Expire after 30 days", coins: 250, price: 19.99 },
-  { id: 6, name: "Expire after 30 days", coins: 600, price: 29.99 },
+  { id: 1, name: "Expire after 15 days", coins: 50, price: 5 },
+  { id: 2, name: "Expire after 15 days", coins: 100, price: 10 },
+  { id: 3, name: "Expire after 15 days", coins: 200, price: 15 },
+  { id: 4, name: "Expire after 15 days", coins: 380, price: 20 },
+  { id: 5, name: "Expire after 30 days", coins: 500, price: 25.99 },
+  { id: 6, name: "Expire after 30 days", coins: 1500, price: 49.99 },
 ];
-
-const defaultTransactions: Transaction[] = [
-  {
-    id: 2,
-    title: "Gig Priority Booster Boost",
-    description: "Dog Walker listing spotlight fee",
-    amount: -15,
-    currency: "COINS",
-    type: "spend",
-    date: "Jun 13, 11:45 AM",
-  },
-  {
-    id: 3,
-    title: "Bank Transfer Deposit",
-    description: "Direct cash topup",
-    amount: 1500.0,
-    currency: "ZAR",
-    type: "deposit",
-    date: "Jun 10, 04:15 PM",
-  },
-  {
-    id: 4,
-    title: "Platform Maintenance Fee",
-    description: "Priority Gigs listings",
-    amount: -90.0,
-    currency: "ZAR",
-    type: "withdraw",
-    date: "Jun 08, 09:00 AM",
-  },
-];
+const defaultTransactions: Transaction[] = [];
 
 export interface PaymentProofData {
   coins: number;
@@ -135,20 +75,25 @@ export default function CwalletView({
   coinBalance,
   setCoinBalance,
   onSubmitPayment,
+  onTopUpToggle,
 }: {
   coinBalance: number;
   setCoinBalance: React.Dispatch<React.SetStateAction<number>>;
   onSubmitPayment?: (payment: PaymentProofData) => void;
+  onTopUpToggle?: (active: boolean) => void;
 }) {
-  const [balance, setBalance] = useState<number>(1500.0);
+  const [balance, setBalance] = useState<number>(0);
   const [transactions, setTransactions] =
     useState<Transaction[]>(defaultTransactions);
   const [notification, setNotification] = useState<string | null>(null);
 
   // Top Up Modal State
   const [showTopUpModal, setShowTopUpModal] = useState(false);
+  useEffect(() => {
+    if (onTopUpToggle) onTopUpToggle(showTopUpModal);
+  }, [showTopUpModal, onTopUpToggle]);
   const [topUpStep, setTopUpStep] = useState<
-    "method" | "packages" | "bank_details" | "success"
+    "method" | "packages" | "bank_details" | "success" | "review"
   >("method");
   const [paymentGateway, setPaymentGateway] = useState<
     "bank_transfer" | "paystack"
@@ -185,6 +130,12 @@ export default function CwalletView({
   const [isTransferring, setIsTransferring] = useState(false);
 
   useEffect(() => {
+    // Reset old mock data
+    localStorage.removeItem("cwallet_balance");
+    localStorage.removeItem("cwallet_coins");
+    localStorage.removeItem("cwallet_transactions");
+    localStorage.removeItem("cwallet_pending_topup");
+
     // Load persisted configurations
     const savedBalance = localStorage.getItem("cwallet_balance");
     const savedCoins = localStorage.getItem("cwallet_coins");
@@ -225,9 +176,7 @@ export default function CwalletView({
     setIsTransferring(true);
 
     setTimeout(() => {
-      const recipientContact = CONTACTS.find(
-        (c) => c.id === transferRecipient,
-      ) || { name: transferRecipient };
+      const recipientContact = { name: transferRecipient };
       const nextCoins = coinBalance - amount;
 
       const newTx: Transaction = {
@@ -708,7 +657,7 @@ export default function CwalletView({
               initial={{ y: 150, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: 150, opacity: 0 }}
-              className="bg-white rounded-t-3xl sm:rounded-3xl p-6 w-full max-w-sm shadow-2xl relative space-y-6 max-h-[85vh] overflow-y-auto scrollbar-hide"
+              className="bg-white rounded-t-3xl sm:rounded-3xl p-6 w-full max-w-lg shadow-2xl relative space-y-6 max-h-[95vh] overflow-y-auto scrollbar-hide"
             >
               {/* Close Button */}
               <button
