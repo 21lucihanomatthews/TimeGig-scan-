@@ -1,0 +1,6 @@
+{
+  "name": "Mobile Chat Template",
+  "description": "A gig market application with video shorts, real-time chat, multimedia support, and moderation tools.",
+  "requestFramePermissions": ["camera", "microphone"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
