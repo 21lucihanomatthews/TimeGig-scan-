@@ -150,11 +150,7 @@ export default function IdentityVerificationView({ onBack, onComplete }: Identit
   const hasProfilesData = profileData.name && profileData.contactInfo;
 
   const handleStart = () => {
-    if (!hasProfilesData) {
-      setStep("profile-check");
-    } else {
-      setStep("id-upload");
-    }
+    setStep("id-upload");
   };
 
   const handleIdUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -183,11 +179,7 @@ export default function IdentityVerificationView({ onBack, onComplete }: Identit
 
           const storedPic = localStorage.getItem('profilePic');
 
-          if (!storedPic) {
-            setErrorMessage(`Profile Mismatch: No profile picture found to run biometric match against. Authentication rejected.`);
-            setIsSuccess(false);
-            setStep("result");
-          } else if (finalScore < 70) {
+          if (storedPic && finalScore < 70) {
             setErrorMessage(`Profile Mismatch: The person on this ID does not match your profile picture (${finalScore}% match). Authentication rejected.`);
             setIsSuccess(false);
             setStep("result");
@@ -232,7 +224,8 @@ export default function IdentityVerificationView({ onBack, onComplete }: Identit
       const profileName = storedProfile.name || "";
       
       // In a real app, we'd extract text from idFile (OCR)
-      const isNameValid = profileName.trim().split(" ").length >= 2;
+      // Since we don't need profile info, we'll assume the name will be updated post-verification if missing
+      const isNameValid = true;
       
       // Face match simulation - centered around the 70% threshold
       // For this demo, we use a weighted random that favors success but can fail
@@ -284,9 +277,9 @@ export default function IdentityVerificationView({ onBack, onComplete }: Identit
               <div className="space-y-3">
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
-                    <FileText size={14} className="text-blue-600" />
+                    <ShieldCheck size={14} className="text-blue-600" />
                   </div>
-                  <p className="text-xs font-bold text-gray-700">Completed User Profile</p>
+                  <p className="text-xs font-bold text-gray-700">Valid Identity Document</p>
                 </div>
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
@@ -308,31 +301,6 @@ export default function IdentityVerificationView({ onBack, onComplete }: Identit
               className="w-full bg-blue-600 hover:bg-blue-700 text-white font-extrabold py-4 rounded-2xl shadow-xl shadow-blue-100 transition-all flex items-center justify-center gap-2"
             >
               Start Verification <ArrowRight size={18} />
-            </button>
-          </motion.div>
-        );
-
-      case "profile-check":
-        return (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="space-y-6 text-center"
-          >
-            <div className="w-20 h-20 bg-amber-50 rounded-full flex items-center justify-center mx-auto border border-amber-100 shadow-sm">
-              <AlertCircle className="text-amber-600 w-10 h-10" />
-            </div>
-            <div className="space-y-2">
-              <h1 className="text-2xl font-black text-gray-900 tracking-tight">Complete Profile First</h1>
-              <p className="text-sm text-gray-500 max-w-xs mx-auto">
-                You must complete your basic profile information (Name & Contact) before applying for verification.
-              </p>
-            </div>
-            <button
-              onClick={onBack}
-              className="w-full bg-gray-900 text-white font-extrabold py-4 rounded-2xl shadow-xl shadow-gray-200 transition-all"
-            >
-              Go to Profile Settings
             </button>
           </motion.div>
         );
