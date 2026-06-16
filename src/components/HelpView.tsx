@@ -24,6 +24,7 @@ interface HelpViewProps {
   onBack: () => void;
   coinBalance: number;
   isVerified: boolean;
+  avatarUrl?: string | null;
   userData: { name?: string; email?: string } | null;
 }
 
@@ -47,7 +48,7 @@ interface ChatMessage {
   timestamp: string;
 }
 
-export default function HelpView({ onBack, coinBalance, isVerified, userData }: HelpViewProps) {
+export default function HelpView({ onBack, coinBalance, isVerified, avatarUrl, userData }: HelpViewProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [expandedFaq, setExpandedFaq] = useState<number | null>(null);
@@ -405,11 +406,15 @@ export default function HelpView({ onBack, coinBalance, isVerified, userData }: 
                     className={`flex items-start gap-2.5 max-w-[85%] ${isUser ? "ml-auto flex-row-reverse" : "mr-auto text-left"}`}
                   >
                     {/* Tiny Avatar */}
-                    <div className={`w-7 h-7 rounded-full shrink-0 flex items-center justify-center border font-black text-[10px] ${
-                      isUser ? "bg-indigo-600 text-white border-indigo-400" : "bg-gradient-to-r from-indigo-950 to-emerald-950 text-emerald-400 border-zinc-800"
-                    }`}>
-                      {isUser ? "ME" : "⚽"}
-                    </div>
+                    {isUser && avatarUrl ? (
+                      <img src={avatarUrl} className="w-7 h-7 rounded-full shrink-0 border border-indigo-400 object-cover" alt="Me" />
+                    ) : (
+                      <div className={`w-7 h-7 rounded-full shrink-0 flex items-center justify-center border font-black text-[10px] ${
+                        isUser ? "bg-indigo-600 text-white border-indigo-400" : "bg-gradient-to-r from-indigo-950 to-emerald-950 text-emerald-400 border-zinc-800"
+                      }`}>
+                        {isUser ? "ME" : "⚽"}
+                      </div>
+                    )}
 
                     <div className="space-y-1">
                       {/* Message Bubble */}

@@ -7,9 +7,18 @@ interface ProfileViewProps {
   userName: string;
   avatarUrl: string;
   isVerified?: boolean;
+  coverPhoto?: string | null;
+  onUpdateCover?: (url: string) => void;
 }
 
-const ProfileView: React.FC<ProfileViewProps> = ({ onBack, userName, avatarUrl, isVerified }) => {
+const ProfileView: React.FC<ProfileViewProps> = ({ 
+  onBack, 
+  userName, 
+  avatarUrl, 
+  isVerified,
+  coverPhoto,
+  onUpdateCover
+}) => {
   const [showMenu, setShowMenu] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
   const [showBlockConfirm, setShowBlockConfirm] = useState(false);
@@ -140,13 +149,50 @@ const ProfileView: React.FC<ProfileViewProps> = ({ onBack, userName, avatarUrl, 
         </div>
       </header>
       
-      {/* Main Profile Layout */}
-      <div className={`p-6 flex flex-col items-center flex-1 overflow-y-auto ${blocked ? 'opacity-50 pointer-events-none' : ''}`}>
+      {/* Cover / Wallpaper Section */}
+      <div className="relative h-44 w-full bg-slate-100 overflow-hidden group">
+        {coverPhoto ? (
+          <img src={coverPhoto} alt="Cover" className="w-full h-full object-cover" />
+        ) : (
+          <div className="w-full h-full bg-gradient-to-br from-indigo-100 to-blue-50 flex items-center justify-center">
+             <div className="w-16 h-16 rounded-full bg-white/50 backdrop-blur shadow-sm flex items-center justify-center text-blue-300">
+               <Share2 size={24} className="opacity-40" />
+             </div>
+          </div>
+        )}
+        
+        {onUpdateCover && (
+          <label className="absolute bottom-4 right-4 p-2.5 bg-white/90 backdrop-blur text-blue-600 rounded-2xl shadow-lg cursor-pointer hover:bg-white active:scale-95 transition-all flex items-center gap-2 border border-white/40">
+            <Share2 size={16} />
+            <span className="text-[10px] font-black uppercase tracking-wider">Update Wallpaper</span>
+            <input 
+              type="file" 
+              className="hidden" 
+              accept="image/*"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) {
+                  const reader = new FileReader();
+                  reader.onload = (event) => {
+                    if (event.target?.result) {
+                      onUpdateCover(event.target.result as string);
+                      triggerToast("Profile wallpaper updated!");
+                    }
+                  };
+                  reader.readAsDataURL(file);
+                }
+              }}
+            />
+          </label>
+        )}
+      </div>
+
+      <div className={`-mt-16 px-6 flex flex-col items-center flex-1 overflow-y-auto ${blocked ? 'opacity-50 pointer-events-none' : ''}`}>
         <div className="relative mb-4">
           <img 
             src={avatarUrl} 
             alt={userName} 
-            className="w-32 h-32 rounded-full border-4 border-gray-100 object-cover"
+            className="w-32 h-32 rounded-full border-4 border-white shadow-2xl object-cover bg-white"
             onError={(e) => { (e.target as HTMLImageElement).src = 'https://ui-avatars.com/api/?name=' + encodeURIComponent(userName) + '&background=random'; }}
           />
           {isVerified && (

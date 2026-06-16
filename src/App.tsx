@@ -478,6 +478,9 @@ export default function App() {
   const [userProfilePic, setUserProfilePic] = useState<string | null>(() => {
     return localStorage.getItem("profilePic");
   });
+  const [userCoverPhoto, setUserCoverPhoto] = useState<string | null>(() => {
+    return localStorage.getItem("userCoverPhoto");
+  });
 
   useEffect(() => {
     // Sync profile check
@@ -1005,6 +1008,11 @@ export default function App() {
           onBack={() => setShowProfile(null)}
           userName={showProfile.name}
           avatarUrl={showProfile.avatar}
+          coverPhoto={showProfile.avatar === userProfilePic ? userCoverPhoto : null}
+          onUpdateCover={showProfile.avatar === userProfilePic ? (url) => {
+            localStorage.setItem("userCoverPhoto", url);
+            setUserCoverPhoto(url);
+          } : undefined}
           isVerified={showProfile.name === userData?.email || isVerified} // Mock: verified if current user or by name check
         />
       );
@@ -1335,6 +1343,7 @@ export default function App() {
           return (
             <ChatView
               partner={activeChatPartner}
+              userAvatar={userProfilePic || undefined}
               soundEnabled={soundEnabled}
               deductCoins={deductCoins}
               onBack={() => setIsViewingDirectChat(false)}
@@ -1366,7 +1375,10 @@ export default function App() {
               }}
               onMeetingConfirmed={() => {
                 setMeetingArrivalData({
-                  buyer: { name: "You", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=user" },
+                  buyer: { 
+                    name: "You", 
+                    avatar: userProfilePic || "https://api.dicebear.com/7.x/avataaars/svg?seed=user" 
+                  },
                   seller: { name: activeChatPartner?.name || "Neighbor", avatar: activeChatPartner?.avatar || "https://api.dicebear.com/7.x/avataaars/svg?seed=other" },
                   locationName: "Safe Meeting Zone"
                 });
@@ -1622,6 +1634,7 @@ export default function App() {
         onBack={() => setShowHelp(false)}
         coinBalance={coinBalance}
         isVerified={isVerified}
+        avatarUrl={userProfilePic}
         userData={userData}
       />
     );
@@ -1790,7 +1803,32 @@ export default function App() {
                       className="fixed inset-0 z-40"
                       onClick={() => setShowTopMenu(false)}
                     ></div>
-                    <div className="absolute top-14 right-0 z-50 bg-white rounded-xl shadow-xl w-48 border border-gray-100 overflow-hidden transform origin-top-right transition-all">
+                    <div className="absolute top-14 right-0 z-50 bg-white rounded-xl shadow-xl w-52 border border-gray-100 overflow-hidden transform origin-top-right transition-all">
+                      <button
+                        onClick={() => {
+                          setShowTopMenu(false);
+                          setShowProfile({
+                            name: userData?.email || "My Account",
+                            avatar: userProfilePic || "https://api.dicebear.com/7.x/avataaars/svg?seed=user",
+                          });
+                        }}
+                        className="w-full text-left px-4 py-4 bg-slate-50 border-b border-gray-100 transition-colors hover:bg-slate-100 flex items-center gap-3"
+                      >
+                        <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-white shadow-sm bg-white flex items-center justify-center shrink-0">
+                          {userProfilePic ? (
+                            <img src={userProfilePic} className="w-full h-full object-cover" alt="Me" />
+                          ) : (
+                            <User size={18} className="text-gray-400" />
+                          )}
+                        </div>
+                        <div className="overflow-hidden">
+                          <p className="text-[10px] font-black uppercase text-gray-400 tracking-wider">My Profile</p>
+                          <p className="text-sm font-bold text-gray-900 truncate">
+                            {userData?.email?.split('@')[0] || "Verified Neighbor"}
+                          </p>
+                        </div>
+                      </button>
+                      
                       {!isVerified ? (
                         <button
                           onClick={() => {
@@ -2726,6 +2764,54 @@ export default function App() {
             </div>
 
             <div className="flex-1 overflow-y-auto p-6 space-y-8">
+              {/* Profile Avatar Section */}
+              <div className="p-6 bg-slate-900 rounded-[2.5rem] shadow-xl shadow-slate-200 border border-slate-850 relative overflow-hidden group">
+                {/* Visual Flair */}
+                <div className="absolute top-0 right-0 w-32 h-32 bg-blue-600/10 rounded-full blur-3xl -mr-16 -mt-16 group-hover:bg-blue-600/20 transition-all duration-700" />
+                <div className="absolute bottom-0 left-0 w-24 h-24 bg-indigo-600/10 rounded-full blur-2xl -ml-12 -mb-12" />
+
+                <div className="relative flex flex-col items-center">
+                  <div className="relative group cursor-pointer mb-4">
+                    <div className="w-24 h-24 rounded-full border-4 border-slate-800 shadow-2xl overflow-hidden bg-slate-800 flex items-center justify-center transition-transform group-hover:scale-105 duration-300">
+                      {userProfilePic ? (
+                        <img src={userProfilePic} alt="Profile" className="w-full h-full object-cover" />
+                      ) : (
+                        <User size={40} className="text-slate-600" />
+                      )}
+                    </div>
+                    
+                    <label className="absolute bottom-0 right-0 p-2 bg-blue-600 text-white rounded-full shadow-lg border-2 border-slate-900 cursor-pointer hover:bg-blue-700 active:scale-90 transition-all">
+                      <Upload size={14} />
+                      <input 
+                        type="file" 
+                        className="hidden" 
+                        accept="image/*"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            const reader = new FileReader();
+                            reader.onload = (event) => {
+                              if (event.target?.result) {
+                                const base64 = event.target.result as string;
+                                localStorage.setItem("profilePic", base64);
+                                setUserProfilePic(base64);
+                                showToastNotification("Profile picture updated!", "success");
+                              }
+                            };
+                            reader.readAsDataURL(file);
+                          }
+                        }}
+                      />
+                    </label>
+                  </div>
+
+                  <div className="text-center">
+                    <h4 className="text-white font-bold text-lg mb-0.5">{userData?.email?.split('@')[0] || "Verified Neighbor"}</h4>
+                    <p className="text-blue-400/80 text-[10px] font-black uppercase tracking-widest">{userData?.email || "No email set"}</p>
+                  </div>
+                </div>
+              </div>
+
               <div className="space-y-6">
                 <div>
                    <h3 className="text-[11px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4">Preferences</h3>

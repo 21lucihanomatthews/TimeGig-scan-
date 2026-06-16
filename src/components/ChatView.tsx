@@ -14,6 +14,7 @@ interface Message {
 
 interface ChatViewProps {
   partner: { name: string; avatar: string };
+  userAvatar?: string;
   onBack: () => void;
   onViewProfile: () => void;
   onViewDocuments: () => void;
@@ -24,6 +25,7 @@ interface ChatViewProps {
 
 const ChatView: React.FC<ChatViewProps> = ({ 
   partner,
+  userAvatar,
   onBack, 
   onViewProfile, 
   onViewDocuments, 
@@ -183,7 +185,7 @@ const ChatView: React.FC<ChatViewProps> = ({
       type,
       fileUrl,
       timestamp: new Date().toLocaleTimeString(),
-      senderAvatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=user',
+      senderAvatar: userAvatar || 'https://api.dicebear.com/7.x/avataaars/svg?seed=user',
     };
 
     const updatedMessages = [...messages, newMessage];

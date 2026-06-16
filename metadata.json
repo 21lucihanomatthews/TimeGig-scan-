@@ -1,6 +1,6 @@
 {
   "name": "TimeGiG",
-  "description": "Premium gig market and neighborhood support manager application with Soccer World Cup celebration.",
+  "description": "Secure community gig marketplace with identity verification, real-time chats, and integrated neighborhood support.",
   "requestFramePermissions": ["camera", "microphone"],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }
