@@ -18,6 +18,7 @@ import {
   MoreVertical,
   AlertTriangle
 } from "lucide-react";
+import { compressImage } from "../utils/imageUtils";
 
 export interface MarketItem {
   id: number;
@@ -107,11 +108,22 @@ export default function MarketView({ onInterested, onCreatingChange, deductCoins
     return matchesSearch && matchesCategory;
   });
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const filesArray = Array.from(e.target.files);
-      const newImageUrls = filesArray.map(file => URL.createObjectURL(file as Blob));
-      setNewImages(prev => [...prev, ...newImageUrls].slice(0, 5));
+      const compressedImages: string[] = [];
+      
+      for (const fileObj of filesArray) {
+        const file = fileObj as File;
+        try {
+          const compressed = await compressImage(file, 800, 800, 0.7);
+          compressedImages.push(compressed);
+        } catch (err) {
+          console.error("Failed to compress image:", err);
+        }
+      }
+      
+      setNewImages(prev => [...prev, ...compressedImages].slice(0, 5));
     }
   };
 

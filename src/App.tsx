@@ -24,6 +24,7 @@ import Top20SeekersBoard from "./components/Top20SeekersBoard";
 import TimeGigLogo from "./components/TimeGigLogo";
 import VerifiedVaultView from "./components/VerifiedVaultView";
 import PromoteAppView from "./components/PromoteAppView";
+import { compressImage } from "./utils/imageUtils";
 import {
   Home,
   MessageSquare,
@@ -658,42 +659,15 @@ export default function App() {
     }, 5000);
   };
 
-  const handleWallpaperUpload = (file: File) => {
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement("canvas");
-        let width = img.width;
-        let height = img.height;
-
-        // Max dimensions for wallpaper to stay within localStorage/performance limits
-        const MAX_SIZE = 1200;
-        if (width > height) {
-          if (width > MAX_SIZE) {
-            height *= MAX_SIZE / width;
-            width = MAX_SIZE;
-          }
-        } else {
-          if (height > MAX_SIZE) {
-            width *= MAX_SIZE / height;
-            height = MAX_SIZE;
-          }
-        }
-
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext("2d");
-        if (ctx) {
-          ctx.drawImage(img, 0, 0, width, height);
-          const compressed = canvas.toDataURL("image/jpeg", 0.7);
-          setAppBackgroundUrl(compressed);
-          showToastNotification("Wallpaper set successfully!", "success");
-        }
-      };
-      img.src = event.target?.result as string;
-    };
-    reader.readAsDataURL(file);
+  const handleWallpaperUpload = async (file: File) => {
+    try {
+      const compressed = await compressImage(file, 1200, 1200, 0.7);
+      setAppBackgroundUrl(compressed);
+      showToastNotification("Wallpaper set successfully!", "success");
+    } catch (err) {
+      console.error(err);
+      showToastNotification("Failed to process wallpaper", "error");
+    }
   };
 
   useEffect(() => {
@@ -1784,6 +1758,8 @@ export default function App() {
                           src={userProfilePic} 
                           alt="User" 
                           className="w-full h-full object-cover" 
+                          referrerPolicy="no-referrer"
+                          onError={(e) => { (e.target as HTMLImageElement).src = 'https://api.dicebear.com/7.x/avataaars/svg?seed=me'; }}
                         />
                       ) : (
                         <User size={20} className="text-gray-400" />
@@ -1816,7 +1792,7 @@ export default function App() {
                       >
                         <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-white shadow-sm bg-white flex items-center justify-center shrink-0">
                           {userProfilePic ? (
-                            <img src={userProfilePic} className="w-full h-full object-cover" alt="Me" />
+                            <img src={userProfilePic} className="w-full h-full object-cover" alt="Me" referrerPolicy="no-referrer" />
                           ) : (
                             <User size={18} className="text-gray-400" />
                           )}
@@ -2774,7 +2750,7 @@ export default function App() {
                   <div className="relative group cursor-pointer mb-4">
                     <div className="w-24 h-24 rounded-full border-4 border-slate-800 shadow-2xl overflow-hidden bg-slate-800 flex items-center justify-center transition-transform group-hover:scale-105 duration-300">
                       {userProfilePic ? (
-                        <img src={userProfilePic} alt="Profile" className="w-full h-full object-cover" />
+                        <img src={userProfilePic} alt="Profile" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                       ) : (
                         <User size={40} className="text-slate-600" />
                       )}
@@ -2786,19 +2762,18 @@ export default function App() {
                         type="file" 
                         className="hidden" 
                         accept="image/*"
-                        onChange={(e) => {
+                        onChange={async (e) => {
                           const file = e.target.files?.[0];
                           if (file) {
-                            const reader = new FileReader();
-                            reader.onload = (event) => {
-                              if (event.target?.result) {
-                                const base64 = event.target.result as string;
-                                localStorage.setItem("profilePic", base64);
-                                setUserProfilePic(base64);
-                                showToastNotification("Profile picture updated!", "success");
-                              }
-                            };
-                            reader.readAsDataURL(file);
+                            try {
+                              const compressed = await compressImage(file, 400, 400, 0.8);
+                              localStorage.setItem("profilePic", compressed);
+                              setUserProfilePic(compressed);
+                              showToastNotification("Profile picture updated!", "success");
+                            } catch (err) {
+                              console.error(err);
+                              showToastNotification("Failed to process profile picture", "error");
+                            }
                           }
                         }}
                       />

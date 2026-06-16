@@ -12,6 +12,7 @@ import {
   Upload,
   CheckCircle2
 } from 'lucide-react';
+import { compressImage } from '../utils/imageUtils';
 
 interface Document {
   id: string;
@@ -88,24 +89,38 @@ export default function VerifiedVaultView({ onBack, userName }: VerifiedVaultVie
     }
   };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files) return;
 
-    Array.from(files).forEach((file: File) => {
-      const reader = new FileReader();
-      reader.onloadend = () => {
+    for (const fileItem of Array.from(files)) {
+      const file = fileItem as File;
+      try {
+        let url = "";
+        if (file.type.startsWith('image/')) {
+          url = await compressImage(file, 1200, 1200, 0.7);
+        } else {
+          // Non-image files as base64
+          url = await new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result as string);
+            reader.readAsDataURL(file);
+          });
+        }
+
         const newDoc: Document = {
           id: Date.now().toString() + Math.random(),
           name: file.name,
           type: file.type,
-          url: reader.result as string,
+          url: url,
           date: new Date().toLocaleDateString()
         };
         setDocuments(prev => [...prev, newDoc]);
-      };
-      reader.readAsDataURL(file);
-    });
+      } catch (err) {
+        // @ts-ignore
+        console.error("Failed to process file:", file.name, err);
+      }
+    }
   };
 
   const removeDoc = (id: string) => {
@@ -240,8 +255,12 @@ export default function VerifiedVaultView({ onBack, userName }: VerifiedVaultVie
         <div className="space-y-3">
           {documents.map((doc) => (
             <div key={doc.id} className="bg-white p-4 rounded-2xl border border-gray-100 flex items-center gap-4 group hover:border-blue-100 hover:shadow-sm transition-all">
-              <div className="w-10 h-10 bg-gray-50 rounded-xl flex items-center justify-center text-gray-400 group-hover:bg-blue-50 group-hover:text-blue-500">
-                <FileText size={20} />
+              <div className="w-10 h-10 bg-gray-50 rounded-xl flex items-center justify-center text-gray-400 group-hover:bg-blue-50 group-hover:text-blue-500 overflow-hidden">
+                {doc.type.startsWith('image/') ? (
+                  <img src={doc.url} className="w-full h-full object-cover" alt="" referrerPolicy="no-referrer" />
+                ) : (
+                  <FileText size={20} />
+                )}
               </div>
               <div className="flex-1 min-w-0">
                 <h4 className="text-sm font-bold text-gray-900 truncate">{doc.name}</h4>

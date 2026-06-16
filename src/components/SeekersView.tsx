@@ -26,6 +26,7 @@ import {
   UserPlus,
   Share2
 } from 'lucide-react';
+import { compressImage } from '../utils/imageUtils';
 
 export const formatPriceForMarketplace = (priceStr: string) => {
   if (!priceStr) return 'ZAR 0';
@@ -173,30 +174,26 @@ export default function SeekersView({ seekers, setSeekers, onStartChat, onCreati
     triggerSeekerToast(`🚫 Blocked successfully! You will no longer view listings or receive contact from this provider.`);
   };
 
-  const handleMultipleFilesUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleMultipleFilesUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     setImageError('');
     if (!e.target.files) return;
     
     const files = Array.from(e.target.files) as File[];
     
-    files.forEach(file => {
+    for (const file of files) {
       if (!file.type.startsWith('image/')) {
         setImageError('Please select image files only.');
-        return;
+        continue;
       }
-      if (file.size > 2 * 1024 * 1024) { // 2MB max to keep localStorage budget safe
-        setImageError('Some images are too large. Maximum size is 2MB per image.');
-        return;
+      
+      try {
+        const compressed = await compressImage(file, 800, 800, 0.7);
+        setNewImagesList(prev => [...prev, compressed]);
+      } catch (err) {
+        console.error("Failed to compress image:", err);
+        setImageError('Failed to process some images.');
       }
-
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        if (event.target?.result && typeof event.target.result === 'string') {
-          setNewImagesList(prev => [...prev, event.target!.result as string]);
-        }
-      };
-      reader.readAsDataURL(file);
-    });
+    }
     // Reset file input value so same files can be re-uploaded
     e.target.value = '';
   };
@@ -446,7 +443,7 @@ export default function SeekersView({ seekers, setSeekers, onStartChat, onCreati
               >
                 <div className="flex items-center gap-3">
                   <div className="relative">
-                    <img src={s.avatar} className="w-10 h-10 rounded-full border-2 border-white/30" alt="" />
+                    <img src={s.avatar} className="w-10 h-10 rounded-full border-2 border-white/30" alt="" referrerPolicy="no-referrer" />
                     <div className={`absolute -top-1 -left-1 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black ${
                       idx === 0 ? 'bg-yellow-400 text-yellow-900' : 
                       idx === 1 ? 'bg-slate-300 text-slate-800' : 
@@ -517,7 +514,7 @@ export default function SeekersView({ seekers, setSeekers, onStartChat, onCreati
                 className="shrink-0 w-40 bg-white border border-gray-100 rounded-2xl p-3 shadow-sm flex flex-col items-center text-center gap-2 cursor-pointer"
               >
                 <div className="relative">
-                  <img src={item.seeker?.avatar} className="w-12 h-12 rounded-full border-2 border-blue-50" alt="" />
+                  <img src={item.seeker?.avatar} className="w-12 h-12 rounded-full border-2 border-blue-50" alt="" referrerPolicy="no-referrer" />
                   <div className="absolute -bottom-1 -right-1 bg-yellow-400 rounded-full p-0.5 border border-white">
                     <Trophy size={10} className="text-yellow-900" />
                   </div>

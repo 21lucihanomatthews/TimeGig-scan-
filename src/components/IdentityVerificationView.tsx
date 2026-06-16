@@ -13,6 +13,7 @@ import {
   Lock,
   ArrowRight
 } from "lucide-react";
+import { compressImage } from "../utils/imageUtils";
 
 function LiveSelfieScanner({ onCapture }: { onCapture: (base64: string) => void }) {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -51,7 +52,7 @@ function LiveSelfieScanner({ onCapture }: { onCapture: (base64: string) => void 
       canvasRef.current.width = videoRef.current.videoWidth;
       canvasRef.current.height = videoRef.current.videoHeight;
       ctx?.drawImage(videoRef.current, 0, 0);
-      const base64 = canvasRef.current.toDataURL("image/jpeg");
+      const base64 = canvasRef.current.toDataURL("image/jpeg", 0.7);
       
       // Stop stream before proceeding
       if (stream) {
@@ -153,11 +154,10 @@ export default function IdentityVerificationView({ onBack, onComplete }: Identit
     setStep("id-upload");
   };
 
-  const handleIdUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleIdUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      const reader = new FileReader();
-      reader.onload = () => {
-        const b64 = reader.result as string;
+      try {
+        const b64 = await compressImage(e.target.files[0], 1000, 1000, 0.7);
         setIdFile(b64);
         
         // Immediate Scan Against Profile Picture
@@ -187,20 +187,22 @@ export default function IdentityVerificationView({ onBack, onComplete }: Identit
             setStep("selfie");
           }
         }, 3000);
-      };
-      reader.readAsDataURL(e.target.files[0]);
+      } catch (err) {
+        console.error(err);
+      }
     }
   };
 
-  const handleSelfieUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleSelfieUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      const reader = new FileReader();
-      reader.onload = () => {
-        setSelfieFile(reader.result as string);
+      try {
+        const b64 = await compressImage(e.target.files[0], 800, 800, 0.7);
+        setSelfieFile(b64);
         setStep("analyzing");
         startAnalysis();
-      };
-      reader.readAsDataURL(e.target.files[0]);
+      } catch (err) {
+        console.error(err);
+      }
     }
   };
 

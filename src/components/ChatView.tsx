@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Send, Image, Video as VideoIcon, MessageSquare, ShieldAlert, X, ShieldCheck, Camera, PhoneOff, Mic, Settings, MapPin, AlertTriangle, ChevronLeft, MoreVertical, Loader2, Trash2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { compressImage } from '../utils/imageUtils';
 
 interface Message {
   id: number;
@@ -200,11 +201,20 @@ const ChatView: React.FC<ChatViewProps> = ({
     setShowEmojiPicker(false);
   };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, type: 'image' | 'video') => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: 'image' | 'video') => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      const url = URL.createObjectURL(file);
-      setPendingFile({type, url});
+      try {
+        let url = "";
+        if (type === 'image') {
+          url = await compressImage(file, 800, 800, 0.7);
+        } else {
+          url = URL.createObjectURL(file);
+        }
+        setPendingFile({type, url});
+      } catch (err) {
+        console.error(err);
+      }
     }
   };
 

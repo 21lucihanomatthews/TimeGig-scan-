@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { ArrowLeft, Star, MapPin, User, MoreVertical, ShieldAlert, BadgeCheck, Shield, X, AlertTriangle, ShieldCheck, Share2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { compressImage } from '../utils/imageUtils';
 
 interface ProfileViewProps {
   onBack: () => void;
@@ -169,17 +170,16 @@ const ProfileView: React.FC<ProfileViewProps> = ({
               type="file" 
               className="hidden" 
               accept="image/*"
-              onChange={(e) => {
+              onChange={async (e) => {
                 const file = e.target.files?.[0];
                 if (file) {
-                  const reader = new FileReader();
-                  reader.onload = (event) => {
-                    if (event.target?.result) {
-                      onUpdateCover(event.target.result as string);
-                      triggerToast("Profile wallpaper updated!");
-                    }
-                  };
-                  reader.readAsDataURL(file);
+                  try {
+                    const compressed = await compressImage(file, 1200, 800, 0.7);
+                    onUpdateCover(compressed);
+                    triggerToast("Profile wallpaper updated!");
+                  } catch (err) {
+                    console.error(err);
+                  }
                 }
               }}
             />
